@@ -1,0 +1,11 @@
+services:
+  web:
+    container_name: real-madlead
+    build: .
+    volumes:
+      - .:/src
+    restart: always
+    ports:
+      - 8090:8000 # ホストマシンのポート8070を、docker内のポート8010に接続する
+    env_file:
+      - .env
