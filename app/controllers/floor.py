@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from app.schemas import FloorPlanInputSchema, FloorPlanOutputSchema, FurniturePosition, Furniture
-
+from app.furniture_data import furniture_list_all
 router = APIRouter()
 
 # 家具のリストを受け取り、床の上に配置した家具のリストを返す
@@ -31,16 +31,4 @@ def generate_floor_plan(
 # 家具のリストを取得
 @router.get("/floor/furnitures")
 def get_furnitures() -> list[Furniture]:
-    furnitures = [
-        Furniture(
-            name="Chair",
-            width=0.5,
-            length=0.5
-        ),
-        Furniture(
-            name="Table",
-            width=1.0,
-            length=1.0
-        )
-    ]
-    return furnitures
+    return furniture_list_all

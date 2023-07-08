@@ -2,8 +2,9 @@ from pydantic import BaseModel, Field
 
 # 家具
 class Furniture(BaseModel):
-    name: str = Field(example="Chair")
-    width: float = Field(example=0.5)
+    id: int = Field(example=0)
+    name: str = Field(example="ソファ")
+    width: float = Field(example=1.4)
     length: float = Field(example=0.5)
 
 # 家具の位置　家具を継承
