@@ -1,6 +1,8 @@
 # 環境構築
 ### リポジトリをクローン
 `git clone https://github.com/real-madlead/backend.git`
+### .envファイルを作成
+
 ### コンテナイメージをビルド
 real-madleadフォルダにて
 `docker-compose build`

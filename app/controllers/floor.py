@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.schemas import FloorPlanInputSchema, FloorPlanOutputSchema, FurniturePosition, Furniture
+from app.schemas import FloorPlanInputSchema, FloorPlanOutputSchema, FurniturePlace, Furniture
 from app.furniture_data import furniture_list_all
 router = APIRouter()
 
@@ -16,7 +16,7 @@ def generate_floor_plan(
 
     furniture_position_list = []
     for furniture in furniture_list:
-        furniture_postion = FurniturePosition(
+        furniture_postion = FurniturePlace(
             name=furniture.name,
             width=furniture.width,
             length=furniture.length,
