@@ -8,6 +8,18 @@ router = APIRouter()
 def generate_floor_plan(
     floor_info: FloorPlanInputSchema,
 ) -> FloorPlanOutputSchema:
+    """
+    ### 間取り生成用のAPI
+    #### リクエスト
+    - ***floor***: 床面積の情報
+    - ***furnitures***: 家具のリスト
+    家具の数をquantityで指定することで、同じ家具を複数個配置することができる
+    ある家具の数が1個以上のときに含める
+
+    #### レスポンス
+    - ***floor***: 床面積の情報
+    - ***furnitures***: 家具のリスト (家具の位置情報を含む)
+    """
     # 配置する家具のリスト{name, width, length}
     furniture_list = floor_info.furnitures
     # 部屋の縦横の長さ
@@ -31,4 +43,9 @@ def generate_floor_plan(
 # 家具のリストを取得
 @router.get("/floor/furnitures")
 def get_furnitures() -> list[Furniture]:
+    """
+    ### 使用できる家具のリストを取得するAPI
+    #### レスポンス
+    [id, name, width, length]をカラムに持つオブジェクトが複数個入った配列が返ってくる
+    """
     return furniture_list_all
