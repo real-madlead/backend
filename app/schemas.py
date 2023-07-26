@@ -7,9 +7,6 @@ class Furniture(BaseModel):
     width: float = Field(example=1.4)
     length: float = Field(example=0.5)
 
-class FurnitureHasQuantity(Furniture):
-    quantity: int = Field(example=1)
-
 # 家具の位置　家具を継承
 class FurniturePlace(Furniture):
     x: float = Field(example=0)
@@ -21,10 +18,16 @@ class Floor(BaseModel):
     width: float = Field(example=5)
     length: float = Field(example=5)
 
+class FurnitureInput(BaseModel):
+    id: int = Field(example=0)
+    quantity: int = Field(example=1)
+
 # 間取り生成の入力
 class FloorPlanInputSchema(BaseModel):
     floor: Floor
-    furnitures: list[FurnitureHasQuantity]
+    furnitures: list[FurnitureInput]
+
+
 
 # 間取り生成の出力
 class FloorPlanOutputSchema(BaseModel):

@@ -20,11 +20,11 @@ def generate_floor_plan(
     - ***floor***: 床面積の情報
     - ***furnitures***: 家具のリスト (家具の位置情報を含む)
     """
-    # 配置する家具のリスト{name, width, length}
-    furniture_list = floor_info.furnitures
-    # 部屋の縦横の長さ
-    floor_width = floor_info.floor.width
-    floor_length = floor_info.floor.length
+    furniture_list = []
+    for furniture in floor_info.furnitures:
+        for i in range(furniture.quantity):
+            furniture_list.append(furniture_list_all[furniture.id])
+    
 
     furniture_position_list = []
     for furniture in furniture_list:
