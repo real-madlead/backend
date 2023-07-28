@@ -540,7 +540,7 @@ def create_room(room_width:int, room_length:int, furnitures:list, create_num:int
     return room_info
 
 def squeeze_room(df):
-    """AIによる絞り込み
+    """AIによる絞り込み(未実装)
     Parameters
     ---------
     df : pd.DataFrame
@@ -565,6 +565,11 @@ def get_position(name:str, name_counter:dict, series):
         各家具の出現数を数えるための辞書
     series : pd.Series
         各家具の配置場所が保存されているシリーズオブジェクト
+    
+    Returns
+    ------
+    x, y : float
+        家具の配置場所
     """
     cur_name = f'''{name}_{name_counter[name]}'''
     x, y = series[f'''{cur_name}_x'''], series[f'''{cur_name}_y''']
