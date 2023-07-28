@@ -196,7 +196,6 @@ class Room():
             restart = False  # ループを再開するかどうかをチェックするフラグ
             for f_dic in random_furniture:
                 dic = dict()
-                prob = f_dic['prob']
                 name = f_dic['name']
                 if f_dic["exist"]==1:
                     counter = 0
@@ -574,4 +573,7 @@ def get_position(name:str, name_counter:dict, series):
     cur_name = f'''{name}_{name_counter[name]}'''
     x, y = series[f'''{cur_name}_x'''], series[f'''{cur_name}_y''']
     return x, y
+"""
+f_dicのキーにname, width, lengthだけでなくrotation_range, restrictionもいる
 
+"""
