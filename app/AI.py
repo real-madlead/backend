@@ -1,7 +1,5 @@
 from shapely.geometry import Polygon, LineString
 from shapely.affinity import rotate
-from matplotlib.lines import Line2D
-import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import math
 import random
@@ -47,12 +45,9 @@ class Room():
         self.windows = windows
         self.doors = doors
         self.line_objects = []
-        self.direction_lines = []
         self.furniture_objects = []
-        self.furniture_draw_objects = []
-        self.furniture_text_objects = []
         
-    def plot_room(self, ax):
+    def plot_room(self):
         """家具を抜きにした部屋と窓、ドアを描画するメソッド
         """
         x_coords = [edge[0] for edge in self.edges]
@@ -60,10 +55,6 @@ class Room():
         
         min_x, max_x = min(x_coords), max(x_coords)
         min_y, max_y = min(y_coords), max(y_coords)
-        
-        ax.set_xlim([min_x-2, max_x+2])
-        ax.set_ylim([min_y-2, max_y+2])
-        ax.set_aspect('equal')
         
         points = [lst for lst in self.edges]
         if self.windows!=None:
@@ -102,11 +93,10 @@ class Room():
                 line["color"] = "k"
             lines.append(line)
         for line in lines:
-            draw_line, calculate_line = create_line(start=[line["x"][0], line["y"][0]], end=[line["x"][1], line["y"][1]], color=line["color"])
-            plot_line(draw_line, ax)
+            calculate_line = create_line(start=[line["x"][0], line["y"][0]], end=[line["x"][1], line["y"][1]], color=line["color"])
             self.line_objects.append(calculate_line)
         
-    def plot_furniture(self, ax, furnitures:list, furnitures_coord:list):
+    def plot_furniture(self, furnitures:list, furnitures_coord:list):
         """家具を配置するメソッド
 
         Parameters
@@ -127,26 +117,18 @@ class Room():
         min_x, max_x = min(x_coords), max(x_coords)
         min_y, max_y = min(y_coords), max(y_coords)
         for furniture, coord in zip(furnitures, furnitures_coord): 
-            draw_furniture, calculate_furniture = create_rectangle(coord, furniture.h_width, furniture.v_width, furniture.rotation, furniture.color)
-            furniture_name_text = ax.text(coord[0], coord[1], furniture.name, color=furniture.color, fontsize=13) # added this line
-            self.furniture_text_objects.append(furniture_name_text) # added this line
-            
-            draw_direction, _ = create_direction_line(coord, furniture.rotation, furniture.color, furniture.h_width, furniture.v_width) # add this line
-            plot_line(draw_direction, ax)#add this line
-            
-            self.direction_lines.append(draw_direction)
+            calculate_furniture = create_rectangle(coord, furniture.h_width, furniture.v_width, furniture.rotation, furniture.color)
+        
             if (multi_check_overlap(calculate_furniture, self.line_objects)) or (coord[0]<=min_x) or (coord[0]>=max_x) or (coord[1]<=min_y) or (coord[1]>=max_y):
                 error_flag.append(1)
             elif multi_check_overlap(calculate_furniture, self.furniture_objects):
                 error_flag.append(2)
             else:
                 error_flag.append(0)
-            ax.add_patch(draw_furniture)
             self.furniture_objects.append(calculate_furniture)
-            self.furniture_draw_objects.append(draw_furniture)
         return error_flag
 
-    def clear_furniture(self, ax, furniture_index:int=None, all_clear:bool=False):
+    def clear_furniture(self, furniture_index:int=None, all_clear:bool=False):
         """配置した家具を削除するメソッド
 
         Parameters
@@ -157,23 +139,11 @@ class Room():
             描画した家具全てを削除するかどうか
         """
         if furniture_index!=None:
-            self.furniture_draw_objects[furniture_index].remove()
-            self.direction_lines[furniture_index].remove()
-            self.furniture_text_objects[furniture_index].remove()
             del self.furniture_objects[furniture_index]
-            del self.furniture_draw_objects[furniture_index]
-            del self.direction_lines[furniture_index]
-            del self.furniture_text_objects[furniture_index]
         if all_clear:
-            for i_1,i_2,i_3 in zip(self.furniture_draw_objects, self.direction_lines, self.furniture_text_objects):
-                i_1.remove()
-                i_2.remove()
-                i_3.remove()
             self.furniture_objects = list()
-            self.furniture_draw_objects = list()
-            self.direction_lines = list()
-            self.furniture_text_objects = list()
-    def random_plot_furniture(self, random_furniture:list, ax):
+    
+    def random_plot_furniture(self, random_furniture:list):
         """家具を部屋、他の家具とかさならないように配置するメソッド
 
         Parameters
@@ -246,16 +216,16 @@ class Room():
                             dic["x"], dic["y"] = random.randint(min_x, max_x), random.randint(min_y, max_y)
                             dic["rotation"] = dic["rotation"] = random.choice(f_dic["rotation_range"])
                         fur = Furniture(f_dic["v_width_range"], f_dic["h_width_range"], dic["rotation"], f_dic["name"], f_dic["color"])
-                        error_flag = self.plot_furniture(ax, [fur], [[dic["x"], dic["y"]]])#ポジションのエラーを追加
+                        error_flag = self.plot_furniture([fur], [[dic["x"], dic["y"]]])#ポジションのエラーを追加
                         #error_flag = self.plot_furniture(ax, [furniture], dic["coord"])
                         if error_flag[0]!=0:
-                            self.clear_furniture(ax, furniture_index=-1)
+                            self.clear_furniture(furniture_index=-1)
                             counter += 1
                         elif error_flag[0]==0:
                             furniture_info.append(dic)
                             break
                         if counter>50:#50回以上エラーが出たら論理的におけないと判断し、もう一度全ての家具を置きなおす
-                            self.clear_furniture(ax, all_clear=True)
+                            self.clear_furniture(all_clear=True)
                             restart = True
                             break
                         print(counter)
@@ -283,28 +253,24 @@ def create_rectangle(center, width, height, angle, color):
     rectangle_polygon : shapely.geometry.polygon.Polygon
         あたり判定を計算するために仮想的に作成された四角形
     """
-    rectangle = patches.Rectangle((center[0], center[1]), width, height, angle=angle, fill=False, edgecolor=color)
     rectangle_coordinates = [(center[0], center[1]), 
                              (center[0], center[1] + height), 
                              (center[0] + width, center[1] + height), 
                              (center[0] + width, center[1])]
     rectangle_polygon = Polygon(rectangle_coordinates)
     rectangle_polygon = rotate(rectangle_polygon, angle, origin=(center[0], center[1]))
-    return rectangle, rectangle_polygon
+    return rectangle_polygon
 
 
 def create_line(start, end, color):
     """部屋の枠を表す線を作成する関数
     Returns
     -------
-    line : matplotlib.lines.Line2D
-        描画するための四角形のオブジェクト
     line_polygon : shapely.geometry.LineString
         あたり判定を計算するために仮想的に作成された四角形
     """
     line_polygon = LineString([(start[0], start[1]), (end[0], end[1])])
-    line = Line2D([start[0], end[0]], [start[1], end[1]], color=color)
-    return line, line_polygon
+    return line_polygon
 
 def trigonometric_addition_sin(sin_a:float, cos_a:float, b:int):
     """sin(a + b) = sin(a)cos(b) + cos(a)sin(b)を計算します
@@ -323,25 +289,6 @@ def trigonometric_addition_cos(sin_a:float, cos_a:float, b:int):
 def trigonometric_addition_cos_minus(sin_a:float, cos_a:float, b:int):
     """cos(a - b) = cos(a)cos(b) + sin(a)sin(b)を計算します"""
     return cos_a * math.cos(math.radians(b)) + sin_a * math.sin(math.radians(b))
-
-def create_direction_line(center, angle, color, furniture_h_len, furniture_v_len):
-    """家具の回転を表す棒を描画するための関数
-    """
-    r = math.sqrt((furniture_h_len/2)**2 + (furniture_v_len/2)**2)
-
-    start_point = (
-        center[0] + r * trigonometric_addition_cos((furniture_v_len/2)/r, (furniture_h_len/2)/r, angle),
-        center[1] + r * trigonometric_addition_sin((furniture_v_len/2)/r, (furniture_h_len/2)/r, angle)
-        )
-    end_point = (
-        center[0] + math.cos(math.radians(angle)) + r * trigonometric_addition_cos((furniture_v_len/2)/r, (furniture_h_len/2)/r, angle), 
-        center[1] + math.sin(math.radians(angle)) + r * trigonometric_addition_sin((furniture_v_len/2)/r, (furniture_h_len/2)/r, angle)
-        )
-    line, line_polygon = create_line(start_point, end_point, color)
-    return line, line_polygon
-
-def plot_line(line, ax):
-    ax.add_line(line)
     
 def find_center(points):
     """中心を見つけるための関数
