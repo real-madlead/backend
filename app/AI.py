@@ -1,6 +1,5 @@
 from shapely.geometry import Polygon, LineString
 from shapely.affinity import rotate
-import matplotlib.pyplot as plt
 import math
 import random
 import pandas as pd
