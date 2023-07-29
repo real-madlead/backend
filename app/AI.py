@@ -161,7 +161,7 @@ class Room():
         min_x, max_x = min(x_coords), max(x_coords)
         min_y, max_y = min(y_coords), max(y_coords)
         furniture_info = list()
-        max_attempts = 1000
+        max_attempts = 1e5
         for _ in range(max_attempts):
             restart = False  # ループを再開するかどうかをチェックするフラグ
             for f_dic in random_furniture:
@@ -216,8 +216,7 @@ class Room():
                             dic["x"], dic["y"] = random.randint(min_x, max_x), random.randint(min_y, max_y)
                             dic["rotation"] = dic["rotation"] = random.choice(f_dic["rotation_range"])
                         fur = Furniture(dic["v_width"], dic["h_width"], dic["rotation"], f_dic["name"], None)
-                        error_flag = self.plot_furniture([fur], [[dic["x"], dic["y"]]])#ポジションのエラーを追加
-                        #error_flag = self.plot_furniture(ax, [furniture], dic["coord"])
+                        error_flag = self.plot_furniture([fur], [[dic["x"], dic["y"]]])
                         if error_flag[0]!=0:
                             self.clear_furniture(furniture_index=-1)
                             counter += 1
@@ -228,7 +227,6 @@ class Room():
                             self.clear_furniture(all_clear=True)
                             restart = True
                             break
-                        print(counter)
                     if restart:
                         break
                     
@@ -334,6 +332,12 @@ def find_max_values(arr):
     return max_val_1, max_val_2
    
 def calculate_distance(p1, p2):
+    """2点の座標の距離を計算する関数
+    Parameters
+    ---------
+    p1, p2 : dict
+        x,yのキーが入っている辞書
+    """
     return math.sqrt((p1["x"] - p2["x"])**2 + (p1["y"] - p2["y"])**2)
 
 def find_dict_by_name(dict_list, name, selfdict):
@@ -376,8 +380,10 @@ def make_random_furniture_prob_set(data_list, furniture_names):
 
     Returns
     ------
-    dic_list : list
-        sofa_1, sofa_2, sofa_3など全ての家具情報が入ったリスト辞書のキーに存在するかexistというキーも追加
+    data_list : list
+        元のdata_listのnameキーに番号と存在するかどうかを記したexistキーを追加したもの
+        {"name":ソファ_1, "width":1.4, "length":0.5, "rotation_range":[0, 90, 180], "restriction":["alongwall", "set"], "set_furniture":ベッド, "exist":1},
+        {...}
     """
     name_count = {}  # 各名前の出現回数を数えるための辞書
 
@@ -388,15 +394,11 @@ def make_random_furniture_prob_set(data_list, furniture_names):
         else:
             name_count[name] += 1
         data["name"] = f"{name}_{name_count[name]}"
-    for name in furniture_names:
-        exists = any(data["name"] == name for data in data_list)
-        if not exists:
-            data_list.append({"name": name, "exist": 0})
 
     for data in data_list:
         data["exist"] = 1 if data["name"] in non_duplicated_name else 0
 
-    return dic_list
+    return data_list
 
 def rereformat_dataframe(df):
     """データフレームを機械学習用の構造に変換する関数
@@ -431,7 +433,7 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
     furnitures : list
         配置する家具の情報を辞書オブジェクトでいれたリスト
         ex) furnitures = [
-            {"name":str, "width":float, "length":float, "rotation_range":list, "restriction":["alongwall", "set"], "set_furniture":str},
+            {"name":ソファ, "width":1.4, "length":0.5, "rotation_range":[0, 90, 180], "restriction":["alongwall", "set"], "set_furniture":ベッド},
             {...}
         ]
     generate_num : int
@@ -510,7 +512,7 @@ def get_position(name:str, name_counter:dict, series):
     name_counter : dict
         各家具の出現数を数えるための辞書
     series : pd.Series
-        各家具の配置場所が保存されているシリーズオブジェクト
+        ベストな家具配置を表すdataframeの一行
     
     Returns
     ------
@@ -520,6 +522,4 @@ def get_position(name:str, name_counter:dict, series):
     cur_name = f'''{name}_{name_counter[name]}'''
     x, y = series[f'''{cur_name}_x'''], series[f'''{cur_name}_y''']
     return x, y
-"""
-furniture_listにrotation_range,restrictionというキーを作成して欲しい
-"""
+

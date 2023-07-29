@@ -32,7 +32,6 @@ def generate_floor_plan(
             name=furniture.name,
             width=furniture.width,
             length=furniture.length,
-            # とりあえず原点に配置
             x=x,
             y=y
         )
@@ -44,3 +43,8 @@ def generate_floor_plan(
 @router.get("/floor/furnitures")
 def get_furnitures() -> list[Furniture]:
     return furniture_list_all
+
+"""
+・furniture_listにrotation_range,restrictionというキーを作成して欲しい
+・座標の話(原点が家の中心だとか、家具の座標は端ではなく家具の中心だとか)
+"""
