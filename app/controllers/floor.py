@@ -44,17 +44,21 @@ def generate_floor_plan(
         else:
             name_counter[furniture.name] += 1
         #ベストな家具配置パターンの家具の位置を取得
-        x, y = get_position(furniture.name, name_counter, squeezed_room)
+        x, y, rotation = get_position(furniture.name, name_counter, squeezed_room)
         furniture_postion = FurniturePlace(
+            id = 0, #ダミーデータ
             name=furniture.name,
             width=furniture.width,
             length=furniture.length,
             x=x,
-            y=y
+            y=y,
+            rotation=rotation,
+            restriction = "",
+            rotation_range = [0]
         )
         furniture_position_list.append(furniture_postion)
     
-    return FloorPlanOutputSchema(floor=floor_info.floor, furniture=furniture_position_list)
+    return FloorPlanOutputSchema(floor=floor_info.floor, furnitures=furniture_position_list)
 
 # 家具のリストを取得
 @router.get("/floor/furnitures")

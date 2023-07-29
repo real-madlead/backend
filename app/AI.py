@@ -6,6 +6,7 @@ import pandas as pd
 import os
 import copy
 import re
+from app.schemas import Furniture as FURNITURE
 
 
 
@@ -159,7 +160,7 @@ class Room():
         min_x, max_x = min(x_coords), max(x_coords)
         min_y, max_y = min(y_coords), max(y_coords)
         furniture_info = list()
-        max_attempts = 1e5
+        max_attempts = 10000
         for _ in range(max_attempts):
             restart = False  # ループを再開するかどうかをチェックするフラグ
             for f_dic in random_furniture:
@@ -209,7 +210,7 @@ class Room():
                                 dic["x"] = -1*set_f_rand_len*math.sin(math.radians(set_f_rotation)) - dic["h_width"]*math.cos(math.radians(set_f_rotation))
                                 dic["y"] = set_f_rand_len*math.cos(math.radians(set_f_rotation)) - dic["h_width"]*math.sin(math.radians(set_f_rotation))
                                 dic["rotation"] = set_f_rotation
-                        elif (f_dic["restriction"]==None):
+                        elif (f_dic["restriction"]==""):
                             dic["x"], dic["y"] = random.randint(min_x, max_x), random.randint(min_y, max_y)
                             dic["rotation"] = dic["rotation"] = random.choice(f_dic["rotation_range"])
                         fur = Furniture(dic["v_width"], dic["h_width"], dic["rotation"], f_dic["name"], None)
@@ -393,7 +394,7 @@ def make_random_furniture_prob_set(data_list, furniture_names):
         data["name"] = f"{name}_{name_count[name]}"
 
     for data in data_list:
-        data["exist"] = 1 if data["name"] in non_duplicated_name else 0
+        data["exist"] = 1 if data["name"] in furniture_names else 0
 
     return data_list
 
@@ -445,12 +446,13 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
     room_info : pd.DataFrame
         各家具配置パターンでの家具の情報が入ったdataframe
     """
-    room_h_len, room_v_len = room_width, room_length
+    print(furnitures)
+    furniture_list = [{"name":furniture.name, "width":furniture.width, "length":furniture.length, "rotation_range":furniture.rotation_range, "restriction":furniture.restriction} for furniture in furnitures]
     edges = [
         [0, 0],
-        [0, floor_length],
-        [floor_width, floor_length],
-        [floor_width, 0]
+        [0, room_length],
+        [room_width, room_length],
+        [room_width, 0]
     ]
     room_info = pd.DataFrame()
     for _ in range(generate_num):
@@ -459,7 +461,7 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
         furniture_name_non_duplicated = ["sofa", "desk", "chair", "TV&Stand", "light", "plant", "shelf", "drawer", "bed", "TV"]
         furniture_names = [f"{item}_{i}" for item in furniture_name_non_duplicated for i in range(1, 4)]#[sofa_1, sofa_2, ..]
         #家具をランダムで複製
-        new_random_furniture = make_random_furniture_prob_set(furnitures, furniture_names)#dictにexistキーを追加しなきゃいけない
+        new_random_furniture = make_random_furniture_prob_set(furniture_list, furniture_names)#dictにexistキーを追加しなきゃいけない
         furniture_info_list = room.random_plot_furniture(random_furniture=new_random_furniture)
        
         #各家具の相対的な距離を算出したカラムを追加        
@@ -475,10 +477,10 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
         
         for furniture_info in furniture_info_list:
             df = pd.DataFrame(furniture_info, index=[0])
-            df["room"] = f"""room_{str(_ + image_num)}"""# dataframeに生成されたランダムな部屋配置の番号を追加
+            df["room"] = f"""room_{str(_)}"""# dataframeに生成されたランダムな部屋配置の番号を追加
             #部屋の縦横に関してのカラムを追加
-            df["room_h_length"] = room_h_len
-            df["room_v_length"] = room_v_len
+            df["room_h_length"] = room_width
+            df["room_v_length"] = room_length
             room_info = pd.concat([room_info, df])
     room_info["target"] = "uninspected"
     room_info = rereformat_dataframe(room_info)
@@ -517,6 +519,6 @@ def get_position(name:str, name_counter:dict, series):
         家具の配置場所
     """
     cur_name = f'''{name}_{name_counter[name]}'''
-    x, y = series[f'''{cur_name}_x'''], series[f'''{cur_name}_y''']
-    return x, y
+    x, y, rotation = series[f'''{cur_name}_x'''], series[f'''{cur_name}_y'''], series[f'''{cur_name}_rotation''']
+    return x, y, rotation
 
