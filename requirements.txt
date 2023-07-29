@@ -1,7 +1,7 @@
 fastapi==0.95.1
 uvicorn==0.21.1
 shapely
-numpy==1.22.0
+numpy
 pandas
 packaging==23.1
 pillow==9.5.0

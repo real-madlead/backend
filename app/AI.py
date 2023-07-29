@@ -6,7 +6,6 @@ import pandas as pd
 import os
 import copy
 import re
-import app.schemas.Furniture as FURNITURE 
 
 
 
