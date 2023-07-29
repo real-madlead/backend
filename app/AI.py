@@ -182,10 +182,9 @@ class Room():
                                 dic["x"], dic["y"] = random.randint(min_x, max_x), random.choice([min_y + delta, max_y - delta])
                             dic["rotation"] = random.choice(f_dic["rotation_range"])
                         elif ("restriction" in f_dic) and ("set" in f_dic["restriction"]):
-                            
+                            f_dic["set_furniture"] = "desk"
                             set_furnitures = filtered_furniture = [item for item in furniture_info if re.match(f_dic["set_furniture"] + "_" + r'\d+', item['name'])]
                             if len(set_furnitures) == 0:#setする家具が配置されていない場合その家具も配置されない
-                                
                                 break
                             set_furniture = random.choice(set_furnitures)
                             set_f_x, set_f_y, set_f_rotation = set_furniture["x"] + delta*math.sin(math.radians(set_furniture["rotation"])), set_furniture["y"] - delta*math.cos(math.radians(set_furniture["rotation"])), set_furniture["rotation"]
@@ -211,7 +210,7 @@ class Room():
                                 dic["x"] = -1*set_f_rand_len*math.sin(math.radians(set_f_rotation)) - dic["h_width"]*math.cos(math.radians(set_f_rotation))
                                 dic["y"] = set_f_rand_len*math.cos(math.radians(set_f_rotation)) - dic["h_width"]*math.sin(math.radians(set_f_rotation))
                                 dic["rotation"] = set_f_rotation
-                        elif "restriction" not in f_dic:
+                        elif (f_dic["restriction"]==None):
                             dic["x"], dic["y"] = random.randint(min_x, max_x), random.randint(min_y, max_y)
                             dic["rotation"] = dic["rotation"] = random.choice(f_dic["rotation_range"])
                         fur = Furniture(dic["v_width"], dic["h_width"], dic["rotation"], f_dic["name"], None)
@@ -458,7 +457,7 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
     for _ in range(generate_num):
         room = Room(edges, windows=windows, doors=doors)
         room.plot_room()
-        furniture_name_non_duplicated = ["ソファ", "デスク", "椅子", "テレビスタンド&TV", "照明", "観葉植物", "棚", "タンス", "ベッド"]
+        furniture_name_non_duplicated = ["sofa", "desk", "chair", "TV&Stand", "light", "plant", "shelf", "drawer", "bed", "TV"]
         furniture_names = [f"{item}_{i}" for item in furniture_name_non_duplicated for i in range(1, 4)]#[sofa_1, sofa_2, ..]
         #家具をランダムで複製
         new_random_furniture = make_random_furniture_prob_set(furnitures, furniture_names)#dictにexistキーを追加しなきゃいけない

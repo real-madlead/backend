@@ -3,9 +3,12 @@ from pydantic import BaseModel, Field
 # 家具
 class Furniture(BaseModel):
     id: int = Field(example=0)
-    name: str = Field(example="ソファ")
+    name: str = Field(example="sofa")
     width: float = Field(example=1.4)
     length: float = Field(example=0.5)
+    restriction: str = Field(example="alongwall")
+    rotation_range: list = Field(example=[0, 90, 180]) 
+    
 
 # 家具の位置　家具を継承
 class FurniturePlace(Furniture):
