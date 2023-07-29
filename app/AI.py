@@ -174,14 +174,14 @@ class Room():
                         dic["v_width"] = f_dic["length"]#家具の長さ追加した
                         dic["h_width"] = f_dic["width"]
                         delta = 0.01
-                        if ("restriction" in f_dic) and ("alongwall" in f_dic["restriction"]):
+                        if ("restriction" in f_dic) and (f_dic["restriction"]=="alongwall"):
                             rand = random.choice([0, 1])
                             if rand == 0:
                                 dic["x"], dic["y"] = random.choice([min_x + delta, max_x - delta]), random.randint(min_y, max_y)
                             elif rand == 1:
                                 dic["x"], dic["y"] = random.randint(min_x, max_x), random.choice([min_y + delta, max_y - delta])
                             dic["rotation"] = random.choice(f_dic["rotation_range"])
-                        elif ("restriction" in f_dic) and ("set" in f_dic["restriction"]):
+                        elif ("restriction" in f_dic) and (f_dic["restriction"]=="set"):
                             f_dic["set_furniture"] = "desk"
                             set_furnitures = filtered_furniture = [item for item in furniture_info if re.match(f_dic["set_furniture"] + "_" + r'\d+', item['name'])]
                             if len(set_furnitures) == 0:#setする家具が配置されていない場合その家具も配置されない
