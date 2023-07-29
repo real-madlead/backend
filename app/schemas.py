@@ -6,7 +6,7 @@ class Furniture(BaseModel):
     name: str = Field(example="sofa")
     width: float = Field(example=1.4)
     length: float = Field(example=0.5)
-    restriction: str = Field(example="alongwall")
+    restriction: str | None = Field(example="alongwall")
     rotation_range: list = Field(example=[0, 90, 180]) 
     
 
