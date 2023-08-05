@@ -7,6 +7,7 @@ import os
 import copy
 import re
 from app.schemas import Furniture as FURNITURE
+import copy
 
 
 
@@ -177,9 +178,9 @@ class Room():
                         if ("restriction" in f_dic) and ("alongwall" in f_dic["restriction"]):
                             rand = random.choice([0, 1])
                             if rand == 0:
-                                dic["x"], dic["y"] = random.choice([min_x + delta, max_x - delta]), random.randint(min_y, max_y)
+                                dic["x"], dic["y"] = random.choice([min_x + delta, max_x - delta]), random.uniform(min_y, max_y)
                             elif rand == 1:
-                                dic["x"], dic["y"] = random.randint(min_x, max_x), random.choice([min_y + delta, max_y - delta])
+                                dic["x"], dic["y"] = random.uniform(min_x, max_x), random.choice([min_y + delta, max_y - delta])
                             dic["rotation"] = random.choice(f_dic["rotation_range"])
                         elif ("restriction" in f_dic) and ("set" in f_dic["restriction"]):
                             f_dic["set_furniture"] = "desk"
@@ -211,7 +212,7 @@ class Room():
                                 dic["y"] = set_f_rand_len*math.cos(math.radians(set_f_rotation)) - dic["h_width"]*math.sin(math.radians(set_f_rotation))
                                 dic["rotation"] = set_f_rotation
                         elif (f_dic["restriction"]==""):
-                            dic["x"], dic["y"] = random.randint(min_x, max_x), random.randint(min_y, max_y)
+                            dic["x"], dic["y"] = random.uniform(min_x, max_x), random.uniform(min_y, max_y)
                             dic["rotation"] = dic["rotation"] = random.choice(f_dic["rotation_range"])
                         fur = Furniture(dic["v_width"], dic["h_width"], dic["rotation"], f_dic["name"], None)
                         error_flag = self.plot_furniture([fur], [[dic["x"], dic["y"]]])
@@ -366,6 +367,13 @@ def find_dict_by_name(dict_list, name, selfdict):
             return distance
     return 0
 
+def get_values_from_dicts(key, list_of_dicts):
+    values = []
+    for dictionary in list_of_dicts:
+        if key in dictionary:
+            values.append(dictionary[key])
+    return values
+
 def make_random_furniture_prob_set(data_list, furniture_names):
     """家具の辞書オブジェクトを作成する関数
 
@@ -384,23 +392,31 @@ def make_random_furniture_prob_set(data_list, furniture_names):
         {...}
     """
     name_count = {}  # 各名前の出現回数を数えるための辞書
-
+    #print(f'''DATA LIST : {data_list}''')
     for data in data_list:
         name = data["name"]
         if name not in name_count:
             name_count[name] = 1
         else:
             name_count[name] += 1
-        data["name"] = f"{name}_{name_count[name]}"
-
+        data["name"] = f'''{name}_{name_count[name]}'''
+    """
     for data in data_list:
         data["exist"] = 1 if data["name"] in furniture_names else 0
+    """
+    data_list_names = get_values_from_dicts("name", data_list)
+    for furniture_name in furniture_names:
+        if furniture_name not in data_list_names:
+            d = {"name":furniture_name, "exist":0}
+            data_list.append(d)
+    #print(f'''NAME COUNT : {name_count}''')
 
     return data_list
 
 def rereformat_dataframe(df):
     """データフレームを機械学習用の構造に変換する関数
     """
+    print(f'''DATAFRAME : {df}''')
     new_df = pd.DataFrame()
     room_num_unique_list = list(df["room"].unique())
     all_column_list = df.columns.tolist()
@@ -446,7 +462,7 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
     room_info : pd.DataFrame
         各家具配置パターンでの家具の情報が入ったdataframe
     """
-    print(furnitures)
+    print(f'''FURNITURES : {furnitures}''')
     furniture_list = [{"name":furniture.name, "width":furniture.width, "length":furniture.length, "rotation_range":furniture.rotation_range, "restriction":furniture.restriction} for furniture in furnitures]
     edges = [
         [0, 0],
@@ -455,14 +471,17 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
         [room_width, 0]
     ]
     room_info = pd.DataFrame()
-    for _ in range(generate_num):
+    for I in range(generate_num):
         room = Room(edges, windows=windows, doors=doors)
         room.plot_room()
         furniture_name_non_duplicated = ["sofa", "desk", "chair", "TV&Stand", "light", "plant", "shelf", "drawer", "bed", "TV"]
         furniture_names = [f"{item}_{i}" for item in furniture_name_non_duplicated for i in range(1, 4)]#[sofa_1, sofa_2, ..]
         #家具をランダムで複製
-        new_random_furniture = make_random_furniture_prob_set(furniture_list, furniture_names)#dictにexistキーを追加しなきゃいけない
+        dummy_furniture_list = copy.deepcopy(furniture_list)
+        new_random_furniture = make_random_furniture_prob_set(dummy_furniture_list, furniture_names)#dictにexistキーを追加しなきゃいけない
+        print(f'''ALL FURNITURE : {new_random_furniture}''')
         furniture_info_list = room.random_plot_furniture(random_furniture=new_random_furniture)
+        print(f'''FURNITURE INFO LIST : {furniture_info_list}''')
        
         #各家具の相対的な距離を算出したカラムを追加        
         for i in furniture_info_list:
@@ -477,13 +496,14 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
         
         for furniture_info in furniture_info_list:
             df = pd.DataFrame(furniture_info, index=[0])
-            df["room"] = f"""room_{str(_)}"""# dataframeに生成されたランダムな部屋配置の番号を追加
+            df["room"] = f"""room_{str(I)}"""# dataframeに生成されたランダムな部屋配置の番号を追加
             #部屋の縦横に関してのカラムを追加
             df["room_h_length"] = room_width
             df["room_v_length"] = room_length
             room_info = pd.concat([room_info, df])
     room_info["target"] = "uninspected"
     room_info = rereformat_dataframe(room_info)
+    print(room_info.columns)
     return room_info
 
 def squeeze_room(df):
