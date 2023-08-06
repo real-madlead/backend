@@ -9,7 +9,7 @@ furniture_list_all: list[Furniture] = [
     Furniture(id=5, name="light", width=0.2, length=0.2, rotation_range=[0, 90, 180, 270], restriction="alongwall"),
     Furniture(id=6, name="plant", width=0.2, length=0.2, rotation_range=[0, 90, 180, 270], restriction="alongwall"),
     Furniture(id=7, name="shelf", width=0.4, length=0.3, rotation_range=[0, 90, 180, 270], restriction="alongwall"),
-    Furniture(id=8, name="drawer", width=0.5, length=1, rotation_range=[0, 90, 180, 270], restriction="alongwall"),
+    Furniture(id=8, name="chest", width=0.5, length=1, rotation_range=[0, 90, 180, 270], restriction="alongwall"),
     Furniture(id=9, name="bed", width=1.95, length=1.0, rotation_range=[0, 90, 180, 270], restriction="alongwall")
 ]
 

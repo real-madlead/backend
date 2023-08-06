@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from app.schemas import FloorPlanInputSchema, FloorPlanOutputSchema, FurniturePlace, Furniture
 from app.furniture_data import furniture_list_all
-from app.AI import generate_room, squeeze_room, get_position
+from app.automatic_placing import generate_room, squeeze_room, get_position
 router = APIRouter()
 
 # 家具のリストを受け取り、床の上に配置した家具のリストを返す
@@ -23,6 +23,7 @@ def generate_floor_plan(
     """
     # 配置する家具のリスト{name, width, length}
     furniture_list = []
+    print('start')
     #print(f'''FLOOR INFO FURNITURES : {floor_info.furnitures}''')
     for furniture in floor_info.furnitures:
         for i in range(furniture.quantity):
@@ -34,7 +35,7 @@ def generate_floor_plan(
     floor_length = floor_info.floor.length
     #ランダムに家具の配置を作成
     #print(f'''INPUT : {furniture_list}''')
-    generated_room = generate_room(room_width=floor_width, room_length=floor_length, furnitures=furniture_list, generate_num=1)
+    generated_room = generate_room(room_width=floor_width, room_length=floor_length, furnitures=furniture_list, generate_num=10)
     #AIによりベストな家具配置を見つける
     squeezed_room = generated_room.iloc[squeeze_room(generated_room)]
 
