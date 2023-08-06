@@ -6,10 +6,12 @@ import pandas as pd
 import os
 import copy
 import re
+import torch
+import torch
+from torch import nn
+from torch.autograd import Variable
 from app.schemas import Furniture as FURNITURE
 import copy
-
-
 
 class Furniture():
     """家具クラス
@@ -510,6 +512,35 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
     #print(room_info.columns)
     return room_info
 
+class Net(nn.Module):
+    def __init__(self, n_features):
+        super(Net, self).__init__()
+        self.fc = nn.Linear(n_features, 1)
+
+    def forward(self, x):
+        return self.fc(x)
+
+def get_high_score_indices(model_path, test_df):
+    # データフレームをテストデータに変換
+    X_test = torch.tensor(test_df.values, dtype=torch.float32)
+
+    # 保存したモデルを読み込む
+    model = Net(X_test.shape[1])  # モデルのインスタンスを作成
+    model.load_state_dict(torch.load(model_path))  # 保存したモデルのパラメータを読み込む
+    model.eval()  # モデルを評価モードに設定
+
+    # X_testデータを使って予測を行う
+    with torch.no_grad():
+        predictions = model(X_test)
+
+    # 予測結果をPyTorchのテンソルからnumpy配列に変換
+    predictions_list = predictions.numpy().flatten().tolist()
+
+    # リスト内の要素が閾値を超える場合、そのインデックスを取得
+    max_index = predictions_list.index(max(predictions_list))
+
+    return max_index
+
 def squeeze_room(df):
     """AIによる絞り込み(未実装)
     Parameters
@@ -522,6 +553,10 @@ def squeeze_room(df):
     index : int
         ベストな家具の配置パターンのindex値
     """
+    model_path = './AI_model/torch_model.pth'
+    df_test = df.drop(['room_num', 'target'], axis=1)
+    index = get_high_score_indices(model_path, df_test)
+    
     index = 0
     return index
 
