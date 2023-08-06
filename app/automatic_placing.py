@@ -479,7 +479,7 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
     for I in range(generate_num):
         room = Room(edges, windows=windows, doors=doors)
         room.plot_room()
-        furniture_name_non_duplicated = ["sofa", "desk", "chair", "TV&Stand", "light", "plant", "shelf", "drawer", "bed", "TV"]
+        furniture_name_non_duplicated = ["sofa", "desk", "chair","TV", "light", "plant", "shelf", "chest", "bed"]
         furniture_names = [f"{item}_{i}" for item in furniture_name_non_duplicated for i in range(1, 4)]#[sofa_1, sofa_2, ..]
         #家具をランダムで複製
         dummy_furniture_list = copy.deepcopy(furniture_list)
@@ -553,6 +553,9 @@ def squeeze_room(df):
     index : int
         ベストな家具の配置パターンのindex値
     """
+    #for i in df.columns:
+    #    print(i)
+    print(df.shape[1])
     model_path = './AI_model/torch_model.pth'
     df_test = df.drop(['room_num', 'target'], axis=1)
     index = get_high_score_indices(model_path, df_test)

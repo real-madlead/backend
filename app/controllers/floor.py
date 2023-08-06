@@ -23,6 +23,7 @@ def generate_floor_plan(
     """
     # 配置する家具のリスト{name, width, length}
     furniture_list = []
+    print('start')
     #print(f'''FLOOR INFO FURNITURES : {floor_info.furnitures}''')
     for furniture in floor_info.furnitures:
         for i in range(furniture.quantity):
