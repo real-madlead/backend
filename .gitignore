@@ -1,3 +1,6 @@
 .env
 app/__pycache__/
 app/controllers/__pycache__/
+.venv/
+.idea/
+.python-version
