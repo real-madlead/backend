@@ -177,11 +177,11 @@ class Room():
                         dic["v_width"] = f_dic["length"]#家具の長さ追加した
                         dic["h_width"] = f_dic["width"]
                         delta = 0.01
-                        if ("restriction" in f_dic) and ("alongwall" in f_dic["restriction"]):
+                        if f_dic["restriction"]=="alongwall":
                             dic["x"], dic["y"], dic["rotation"] = set_alongwall(min_x, max_x, min_y, max_y, f_dic["rand_rotation"], delta=0.01)
-                        elif ("restriction" in f_dic) and ("alongwall direction center" in f_dic["restriction"]):
+                        elif f_dic["restriction"]=="alongwall direction center":
                             dic["x"], dic["y"], dic["rotation"] = set_alongwall_dir_ctr(f_dic["length"], min_x, max_x, min_y, max_y, delta=0.01)
-                        elif ("restriction" in f_dic) and ("set" in f_dic["restriction"]):
+                        elif f_dic["restriction"]=="set":
                             f_dic["set_furniture"] = "desk"
                             set_furnitures = [item for item in furniture_info if re.match(f_dic["set_furniture"] + "_" + r'\d+', item['name'])]
                             if len(set_furnitures) == 0:#setする家具が配置されていない場合その家具も配置されない
@@ -190,8 +190,8 @@ class Room():
                             elif len(set_furnitures) != 0:
                                 set_furniture = random.choice(set_furnitures)
                                 dic["x"], dic["y"], dic["rotation"] = set_combo(dic["v_width"], dic["h_width"], min_x, max_x, min_y, max_y, set_furniture=set_furniture, delta=0.01)
-                        elif ("restriction" in f_dic) and ("facing" in f_dic["restriction"]):
-                            f_dic["face_furniture"] = "TV"
+                        elif f_dic["restriction"]=="facing":
+                            f_dic["face_furniture"] = "TV&Stand"
                             face_furnitures = [item for item in furniture_info if re.match(f_dic["face_furniture"] + "_" + r'\d+', item['name'])]
                             if len(face_furnitures) == 0:#setする家具が配置されていない場合その家具も配置されない
                                 dic["x"], dic["y"] = random.uniform(min_x, max_x), random.uniform(min_y, max_y)
@@ -520,7 +520,7 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
         各家具配置パターンでの家具の情報が入ったdataframe
     """
     #print(f'''FURNITURES : {furnitures}''')
-    furniture_list = [{"name":furniture.name, "width":furniture.width, "length":furniture.length, "rotation_range":furniture.rotation_range, "restriction":furniture.restriction} for furniture in furnitures]
+    furniture_list = [{"name":furniture.name, "width":furniture.width, "length":furniture.length, "rand_rotation":furniture.rand_rotation, "restriction":furniture.restriction} for furniture in furnitures]
     edges = [
         [0, 0],
         [0, room_length],
@@ -531,15 +531,28 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
     for I in range(generate_num):
         room = Room(edges, windows=windows, doors=doors)
         room.plot_room()
-        furniture_name_non_duplicated = ["sofa", "desk", "chair","TV&Stand", "light", "plant", "shelf", "chest", "bed"]
+        furniture_name_non_duplicated = ["bed", "desk", "chair","TV&Stand", "sofa", "light", "plant", "shelf", "chest"]
         furniture_names = [f"{item}_{i}" for item in furniture_name_non_duplicated for i in range(1, 4)]#[sofa_1, sofa_2, ..]
+        column_names = ["room_num", "room_v", "room_h", "target"]
+        for furniture_name in furniture_names:
+            column_names.append(f'''{furniture_name}_exist''')
+            column_names.append(f'''{furniture_name}_v_width''')
+            column_names.append(f'''{furniture_name}_h_width''')
+            column_names.append(f'''{furniture_name}_x''')
+            column_names.append(f'''{furniture_name}_y''')
+            column_names.append(f'''{furniture_name}_rotation''')
+            for fur_name in furniture_names:
+                column_names.append(f'''{furniture_name}_d_{fur_name}''')
+                
         #家具をランダムで複製
         dummy_furniture_list = copy.deepcopy(furniture_list)
         new_random_furniture = make_random_furniture_prob_set(dummy_furniture_list, furniture_names)#dictにexistキーを追加しなきゃいけない
         #print(f'''ALL FURNITURE : {new_random_furniture}''')
         furniture_info_list = room.random_plot_furniture(random_furniture=new_random_furniture)
         #print(f'''FURNITURE INFO list: {furniture_info_list}''')
-       
+        print("------------------------")
+        for i in furniture_info_list:
+            print(f'''COLUMN:{i}''')
         #各家具の相対的な距離を算出したカラムを追加        
         for i in furniture_info_list:
             for furniture_name in furniture_names:
@@ -552,6 +565,7 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
                     i[f'd_{furniture_name}'] = 0
         #print(f'''FURNITURE INFO 1: {furniture_info_list[0]}''')
         #print(f'''FURNITURE INFO 2: {furniture_info_list[1]}''')
+        #print(f'''furnniutre{furniture_info_list}''')
         for furniture_info in furniture_info_list:
             df = pd.DataFrame(furniture_info, index=[0])
             df["room"] = f"""room_{str(I)}"""# dataframeに生成されたランダムな部屋配置の番号を追加
@@ -561,6 +575,10 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
             room_info = pd.concat([room_info, df])
     room_info["target"] = "uninspected"
     room_info = rereformat_dataframe(room_info)
+    room_info = room_info[column_names]
+    for column in list(room_info.columns):
+        print(f"column{column}")
+    #print(f"room_info{room_info}")
     #print(room_info.columns)
     return room_info
 
@@ -607,7 +625,7 @@ def squeeze_room(df):
     """
     #for i in df.columns:
     #    print(i)
-    print(df.shape[1])
+    print(f'''----------------->{df.shape[1]}''')
     model_path = './AI_model/torch_model.pth'
     df_test = df.drop(['room_num', 'target'], axis=1)
     index = get_high_score_indices(model_path, df_test)

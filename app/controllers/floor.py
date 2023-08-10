@@ -58,7 +58,7 @@ def generate_floor_plan(
             y=y,
             rotation=rotation,
             restriction = "",
-            rotation_range = [0]
+            rand_rotation = [0]
         )
         furniture_position_list.append(furniture_postion)
     
