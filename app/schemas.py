@@ -7,7 +7,7 @@ class Furniture(BaseModel):
     width: float = Field(example=1.4)
     length: float = Field(example=0.5)
     restriction: str | None = Field(example="alongwall")
-    rotation_range: list = Field(example=[0, 90, 180]) 
+    rand_rotation: list = Field(example=[0, 90, 180]) 
     
 
 # 家具の位置　家具を継承
