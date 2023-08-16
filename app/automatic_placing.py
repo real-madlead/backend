@@ -163,60 +163,131 @@ class Room():
         min_x, max_x = min(x_coords), max(x_coords)
         min_y, max_y = min(y_coords), max(y_coords)
         max_attempts = 10000
+        
+
+        #家具
         for _ in range(max_attempts):
-            restart = False  # ループを再開するかどうかをチェックするフラグ
+            restart = False
             furniture_info = list()
+
+
+            #全ての家具の中から家具を一つずつ選択して、配置していく
             for f_dic in random_furniture:
                 dic = dict()
                 name = f_dic['name']
+
+                #
                 if f_dic["exist"]==1:
                     counter = 0
+
+                    #オプションで付けた配置の制限や、他の家具、壁との接触がない配置になるまで配置、判定、削除を繰り返す
                     while True:
+                        
                         dic["name"] = name
                         dic['exist'] = 1
-                        dic["v_width"] = f_dic["length"]#家具の長さ追加した
+                        dic["v_width"] = f_dic["length"]
                         dic["h_width"] = f_dic["width"]
+                        arrangement_pattern_dict = {
+                            "x_patterns":list(),
+                            "y_patterns":list(),
+                            "rotation_patterns":list()
+                        }
                         delta = 0.01
-                        if f_dic["restriction"]=="alongwall":
-                            dic["x"], dic["y"], dic["rotation"] = set_alongwall(min_x, max_x, min_y, max_y, f_dic["rand_rotation"], delta=0.01)
-                        elif f_dic["restriction"]=="alongwall direction center":
-                            dic["x"], dic["y"], dic["rotation"] = set_alongwall_dir_ctr(f_dic["length"], min_x, max_x, min_y, max_y, delta=0.01)
-                        elif f_dic["restriction"]=="set":
-                            f_dic["set_furniture"] = "desk"
-                            set_furnitures = [item for item in furniture_info if re.match(f_dic["set_furniture"] + "_" + r'\d+', item['name'])]
-                            if len(set_furnitures) == 0:#setする家具が配置されていない場合その家具も配置されない
-                                dic["x"], dic["y"] = random.uniform(min_x, max_x), random.uniform(min_y, max_y)
-                                dic["rotation"] = random.choice(f_dic["rand_rotation"])
-                            elif len(set_furnitures) != 0:
-                                set_furniture = random.choice(set_furnitures)
-                                dic["x"], dic["y"], dic["rotation"] = set_combo(dic["v_width"], dic["h_width"], min_x, max_x, min_y, max_y, set_furniture=set_furniture, delta=0.01)
-                        elif f_dic["restriction"]=="facing":
-                            f_dic["face_furniture"] = "TV&Stand"
-                            face_furnitures = [item for item in furniture_info if re.match(f_dic["face_furniture"] + "_" + r'\d+', item['name'])]
-                            if len(face_furnitures) == 0:#setする家具が配置されていない場合その家具も配置されない
-                                dic["x"], dic["y"] = random.uniform(min_x, max_x), random.uniform(min_y, max_y)
-                                dic["rotation"] = random.choice(f_dic["rand_rotation"])
-                            elif len(face_furnitures) != 0:
-                                face_furniture = random.choice(face_furnitures)
-                                dic["x"], dic["y"], dic["rotation"] = set_facing(dic["v_width"], dic["h_width"], min_x, max_x, min_y, max_y, face_furniture=face_furniture, delta=0.01)
-                        elif (f_dic["restriction"]==""):
-                            dic["x"], dic["y"] = random.uniform(min_x, max_x), random.uniform(min_y, max_y)
-                            dic["rotation"] = dic["rotation"] = random.choice(f_dic["rotation_range"])
-                        fur = Furniture(dic["v_width"], dic["h_width"], dic["rotation"], f_dic["name"], None)
-                        error_flag = self.plot_furniture([fur], [[dic["x"], dic["y"]]])
-                        if error_flag[0]!=0:
-                            self.clear_furniture(furniture_index=-1)
-                            counter += 1
-                        elif error_flag[0]==0:
-                            furniture_info.append(dic)
-                            break
-                        if counter>50:#50回以上エラーが出たら論理的におけないと判断し、もう一度全ての家具を置きなおす
+
+                        #オプションでつけた最初の配置制限に従った配置を100パターン生成
+                        if f_dic["restriction"][0]=="alongwall":
+                            for __ in range(100):
+                                x, y, rotation = set_alongwall(min_x, max_x, min_y, max_y, f_dic["rand_rotation"], delta=delta)
+                                arrangement_pattern_dict["x_patterns"].append(x)
+                                arrangement_pattern_dict["y_patterns"].append(y)
+                                arrangement_pattern_dict["rotation_patterns"].append(rotation)
+                        elif f_dic["restriction"][0]=="alongwall direction center":
+                            for __ in range(100):
+                                x, y, rotation = set_alongwall(min_x, max_x, min_y, max_y, f_dic["rand_rotation"], delta=delta)
+                                arrangement_pattern_dict["x_patterns"].append(x)
+                                arrangement_pattern_dict["y_patterns"].append(y)
+                                arrangement_pattern_dict["rotation_patterns"].append(rotation)
+                        elif "set" in f_dic["restriction"][0]:
+                            furnitures_targeted_for_set = [item for item in furniture_info if re.match(f_dic["restriction"].split("_")[1] + "_" + r'\d+', item['name'])]
+                            if len(furnitures_targeted_for_set) == 0:
+                                x, y, rotation = random.uniform(min_x, max_x), random.uniform(min_y, max_y), random.choice(f_dic["rand_rotation"])
+                            elif len(furnitures_targeted_for_set) != 0:
+                                for __ in range(100):
+                                    furniture_targeted_for_set = random.choice(furnitures_targeted_for_set)
+                                    x, y, rotation = set_combo(dic["v_width"], dic["h_width"], min_x, max_x, min_y, max_y, set_furniture=furniture_targeted_for_set, delta=delta)
+                                    arrangement_pattern_dict["x_patterns"].append(x)
+                                    arrangement_pattern_dict["y_patterns"].append(y)
+                                    arrangement_pattern_dict["rotation_patterns"].append(rotation)
+                        elif "facing" in f_dic["restriction"][0]:
+                            furnitures_targeted_for_facing = [item for item in furniture_info if re.match(f_dic["restriction"].split("_")[1] + "_" + r'\d+', item['name'])]
+                            if len(furnitures_targeted_for_facing) == 0:
+                                x, y, rotation = random.uniform(min_x, max_x), random.uniform(min_y, max_y), random.choice(f_dic["rand_rotation"])
+                            elif len(furnitures_targeted_for_facing) != 0:
+                                for __ in range(100):
+                                    furniture_targeted_for_facing = random.choice(furnitures_targeted_for_facing)
+                                    x, y, rotation = set_facing(dic["v_width"], dic["h_width"], min_x, max_x, min_y, max_y, face_furniture=furniture_targeted_for_facing, delta=delta)
+                                    arrangement_pattern_dict["x_patterns"].append(x)
+                                    arrangement_pattern_dict["y_patterns"].append(y)
+                                    arrangement_pattern_dict["rotation_patterns"].append(rotation)
+
+                        #最初の配置制限に従った配置パターンから他の配置制限に従っていないパターンを削除する
+                        x_pattern_list, y_pattern_list, rotation_pattern_list = arrangement_pattern_dict["x_patterns"], arrangement_pattern_dict["y_patterns"], arrangement_pattern_dict["rotation_patterns"]
+                        list_of_indices_to_remove = list()
+                        if "alongwall" in f_dic["restriction"]:
+                            list_to_add_to_list_to_be_deleted = [index for index, x, y, rotation in zip(list(range(len(x_pattern_list))), x_pattern_list, y_pattern_list, rotation_pattern_list) if determine_if_arranged_by_alongwall(x, y, rotation)]
+                            list_of_indices_to_remove += list_to_add_to_list_to_be_deleted   
+                        if "alongwall direction center" in f_dic["restriction"]:
+                            list_to_add_to_list_to_be_deleted = [index for index, x, y, rotation in zip(list(range(len(x_pattern_list))), x_pattern_list, y_pattern_list, rotation_pattern_list) if determine_if_arranged_by_alongwall_direction_center(x, y, rotation)]   
+                            list_of_indices_to_remove += list_to_add_to_list_to_be_deleted  
+                        if "set" in f_dic["restriction"]:
+                            list_to_add_to_list_to_be_deleted = [index for index, x, y, rotation in zip(list(range(len(x_pattern_list))), x_pattern_list, y_pattern_list, rotation_pattern_list) if determine_if_arranged_by_set(x, y, rotation)]       
+                            list_of_indices_to_remove += list_to_add_to_list_to_be_deleted  
+                        if "facing" in f_dic["restriction"]:
+                            list_to_add_to_list_to_be_deleted = [index for index, x, y, rotation in zip(list(range(len(x_pattern_list))), x_pattern_list, y_pattern_list, rotation_pattern_list) if determine_if_arranged_by_facing(x, y, rotation)]   
+                            list_of_indices_to_remove += list_to_add_to_list_to_be_deleted
+                        list_of_indices_to_remove = list(set(list_of_indices_to_remove))
+                        list_of_indices_to_remove.sort(reverse=True)
+                        for index in list_of_indices_to_remove:
+                            for key in arrangement_pattern_dict:
+                                del arrangement_pattern_dict[key][index]
+                        #配置パターンがなくなってしまった場合に最初からやり直す
+                        if len(arrangement_pattern_dict["x_patterns"])==0:
+                            continue
+
+                        #実際に配置していき他の家具、壁との接触が無いかを判定していく
+                        elif len(arrangement_pattern_dict["x_patterns"])!=0:
+                            furnitures_furniture_arrangements_passed_placement_restriction = [
+                                Furniture(dic["v_width"], dic["h_width"], rotation f_dic["name"], None) for rotation in arrangement_pattern_dict["rotation_patterns"]
+                            ]
+                            furniture_arrangements_passed_placement_restriction = [
+                                [x, y] for x, y in zip(arrangement_pattern_dict["x_patterns"], arrangement_pattern_dict["y_patterns"])
+                            ]
+                            error_flags = self.plot_furniture(
+                                furnitures_furniture_arrangements_passed_placement_restriction,
+                                furniture_arrangements_passed_placement_restriction
+                            )
+                            if 0 not in error_flags:
+                                counter += 1
+                                continue
+                            for error_flag_index in range(len(error_flags)):
+                                if error_flags[error_flag_index] == 0:
+                                    for i in range(len(error_flags)):
+                                        self.clear_furniture(furniture_index = -1)
+                                    dic["x"], dic["y"], dic["rotation"] = arrangement_pattern_dict["x_patterns"][error_flag_index], arrangement_pattern_dict["y_patterns"][error_flag_index], arrangement_pattern_dict["rotation_patterns"][error_flag_index]
+                                    fur = Furniture(dic["v_width"], dic["h_width"], dic["rotation"], f_dic["name"], None)
+                                    error_flag = self.plot_furniture([fur], [[dic["x"], dic["y"]]])
+                                    furniture_info.append(dic)
+                                    break
+
+                        #50回以上エラーが出たら論理的におけないと判断し、もう一度全ての家具を置きなおす
+                        if counter>50:
                             self.clear_furniture(all_clear=True)
                             restart = True
                             break
                     if restart:
                         break
                     
+                #
                 else:
                     dic["name"] = name
                     dic['exist'] = 0
@@ -225,8 +296,10 @@ class Room():
                     dic["v_width"] = 0
                     dic["h_width"] = 0
                     furniture_info.append(dic)
-            if not restart:  # もし再開フラグがFalseの場合、外部ループを終了
+            #もし再開フラグがFalseの場合、外部ループを終了
+            if not restart:    
                 break
+
         return furniture_info
 
 def create_rectangle(center, width, height, angle, color):
@@ -364,7 +437,57 @@ def set_facing(v_width, h_width, min_x, max_x, min_y, max_y, face_furniture, del
         x, y, rotation = face_x + face_v/2 + v_width/2, random.uniform(min_y ,face_y-h_width-face_h), 90
     return x, y, rotation
 
-        
+def determine_if_arranged_by_alongwall(min_x, max_x, min_y, max_y, x, y, rotation, delta):
+    if (x==min_x + delta) or (x==max_x - delta) or (y==min_y + delta) or (y==max_y - delta):
+        return True
+    else:
+        return False
+
+def determine_if_arranged_by_alongwall_direction_center(min_x, max_x, min_y, max_y, x, y, rotation, delta):
+    if (y == min_y + delta) and (rotation == 90):
+        return True
+    elif (x == max_x - delta) and (rotation == 180):
+        return True
+    elif (y == max_x - delta) and (rotation == 270):
+        return True
+    elif (x == min_x + delta) and (rotation == 0):
+        return True
+    else:
+        return False
+
+def determine_if_arranged_by_set(v_width, h_width, min_x, max_x, min_y, max_y, x, y, rotation, set_furnitures, delta):
+    for set_furniture in set_furnitures:
+        set_f_x, set_f_y, set_f_rotation = set_furniture["x"] + delta*math.sin(math.radians(set_furniture["rotation"])), set_furniture["y"] - delta*math.cos(math.radians(set_furniture["rotation"])), set_furniture["rotation"] 
+        inverse_calculation_set_f_rand_len_1 = (x - set_f_x - v_width*math.cos(math.radians(set_f_rotation)) - h_width*math.sin(math.radians(set_f_rotation))) / math.cos(math.radians(set_f_rotation))
+        inverse_calculation_set_f_rand_len_2 = (x - set_f_x - set_furniture["h_width"]*math.cos(math.radians(set_f_rotation)) - h_width*math.cos(math.radians(set_f_rotation)) + v_width*math.sin(math.radians(set_f_rotation))) / (-math.sin(math.radians(set_f_rotation)))
+        inverse_calculation_set_f_rand_len_3 = (x - set_f_x + h_width*math.sin(math.radians(set_f_rotation)) + set_furniture["v_width"]*math.sin(math.radians(set_f_rotation))) / math.cos(math.radians(set_f_rotation))
+        inverse_calculation_set_f_rand_len_4 = (-x - h_width*math.cos(math.radians(set_f_rotation))) / math.sin(math.radians(set_f_rotation))
+
+        if (0 <= inverse_calculation_set_f_rand_len_1 <= set_furniture["h_width"] - v_width) and (rotation == set_f_rotation + 90):
+            return True
+        elif (0 <= inverse_calculation_set_f_rand_len_2 <= set_furniture["v_width"] - v_width) and (rotation == set_f_rotation + 180):
+            return True
+        elif (0 <= inverse_calculation_set_f_rand_len_3 <= set_furniture["h_width"] - v_width) and (rotation == set_f_rotation - 90):
+            return True
+        elif (0 <= inverse_calculation_set_f_rand_len_4 <= set_furniture["v_width"] - v_width) and (rotation == set_f_rotation):
+            return True
+    return False
+
+
+def determine_if_arranged_by_facing(v_width, h_width, min_x, max_x, min_y, max_y, x, y, rotation, face_furnitures, delta):
+    for face_furniture in face_furnitures:
+        face_rotation = face_furniture["rotation"]
+        face_x, face_y, face_h, face_v = face_furniture["x"], face_furniture["y"], face_furniture["h_width"], face_furniture["v_width"]
+        if (face_rotation == 0) and (y == face_y + face_v/2 + v_width/2) and (rotation == 180):
+            return True
+        elif (face_rotation == 90) and (x == face_x - face_v/2 - v_width/2) and (rotation == 270):
+            return True
+        elif (face_rotation == 180) and (y == face_y - face_v/2 - v_width/2) and (rotation == 0):
+            return True
+        elif (face_rotation == 270) and (x == face_x + face_v/2 + v_width/2) and (rotation == 90):
+            return True
+    return False
+
 
 def multi_check_overlap(obj1, objs2:list):
     """あたり判定を計算する関数
@@ -547,8 +670,9 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
         #家具をランダムで複製
         dummy_furniture_list = copy.deepcopy(furniture_list)
         new_random_furniture = make_random_furniture_prob_set(dummy_furniture_list, furniture_names)#dictにexistキーを追加しなきゃいけない
+        sorted_new_random_furniture = sorted(new_random_furniture, key=lambda x: furniture_names.index(x["name"]))
         #print(f'''ALL FURNITURE : {new_random_furniture}''')
-        furniture_info_list = room.random_plot_furniture(random_furniture=new_random_furniture)
+        furniture_info_list = room.random_plot_furniture(random_furniture=sorted_new_random_furniture)
         #print(f'''FURNITURE INFO list: {furniture_info_list}''')
         print("------------------------")
         for i in furniture_info_list:
