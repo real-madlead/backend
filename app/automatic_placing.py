@@ -10,7 +10,8 @@ import torch
 import torch
 from torch import nn
 from torch.autograd import Variable
-from app.schemas import Furniture, FloorPlanInputSchema, FloorPlanOutputSchema, FurnitureInput, FurniturePlace
+from app.schemas import Furniture, FloorPlanInputSchema, FloorPlanOutputSchema, FurnitureInput, FurniturePlace, Floor
+from app.furniture_data import furniture_list_all
 import copy
 
 
@@ -142,6 +143,12 @@ class Room():
         furnitureplace_objects_list : list[FurniturePlace]
             FurniturePlaceオブジェクトが入ったリスト
         """
+        # 新しいソートされたリストを作成
+        sorted_furniture_objects_list = []
+        for item in furniture_list_all:
+            count = furniture_objects_list.count(item)
+            sorted_furniture_objects_list.extend([item] * count)
+
         x_coords = [edge[0] for edge in self.edges]
         y_coords = [edge[1] for edge in self.edges]
         min_x, max_x = min(x_coords), max(x_coords)
@@ -158,11 +165,17 @@ class Room():
                     elif furniture_object.restriction=="alongwall direction center":
                         x, y, rotation = set_alongwall_dir_ctr(furniture_object.length, min_x, max_x, min_y, max_y, delta=0.01)
                     elif furniture_object.restriction.split("_")[0]=="set":
-
-                        x, y, rotation = 
+                        furnitureplace_objects_targeted_for_set = [i for i in furnitureplace_objects_list if i.name==furniture_object.restriction.split("_")[1]]
+                        if len(furnitureplace_objects_targeted_for_set)!=0:
+                            x, y, rotation = set_combo(furniture_object.length, furniture_object.width, min_x, max_x, min_y, max_y, set_furniture=random.choice(furnitureplace_objects_targeted_for_set), delta=0.01)
+                        else:
+                            x, y, rotation = random.uniform(min_x, max_x), random.uniform(min_y, max_y), random.choice(furniture_object.rand_rotation)
                     elif furniture_object.restriction.split("_")[0]=="facing":
-                        
-                        x, y, rotation = 
+                        furnitureplace_objects_targeted_for_facing = [i for i in furnitureplace_objects_list if i.name==furniture_object.restriction.split("_")[1]]
+                        if len(furnitureplace_objects_targeted_for_facing)!=0:
+                            x, y, rotation = set_facing(furniture_object.length, furniture_object.width, min_x, max_x, min_y, max_y, face_furniture=random.choice(furnitureplace_objects_targeted_for_facing), delta=0.01)
+                        else:
+                            x, y, rotation = random.uniform(min_x, max_x), random.uniform(min_y, max_y), random.choice(furniture_object.rand_rotation)
                     else:
                         x, y, rotation = random.uniform(min_x, max_x), random.uniform(min_y, max_y), random.choice(furniture_object.rand_rotation)
                     furnitureplace_object = FurniturePlace(
@@ -192,69 +205,6 @@ class Room():
             if not restart:  # もし再開フラグがFalseの場合、外部ループを終了
                 break
         return furnitureplace_objects_list
-
-                ####
-                dic = dict()
-                name = f_dic['name']
-                if f_dic["exist"]==1:
-                    counter = 0
-                    while True:
-                        dic["name"] = name
-                        dic['exist'] = 1
-                        dic["v_width"] = f_dic["length"]#家具の長さ追加した
-                        dic["h_width"] = f_dic["width"]
-                        delta = 0.01
-                        if f_dic["restriction"]=="alongwall":
-                            dic["x"], dic["y"], dic["rotation"] = set_alongwall(min_x, max_x, min_y, max_y, f_dic["rand_rotation"], delta=0.01)
-                        elif f_dic["restriction"]=="alongwall direction center":
-                            dic["x"], dic["y"], dic["rotation"] = set_alongwall_dir_ctr(f_dic["length"], min_x, max_x, min_y, max_y, delta=0.01)
-                        elif f_dic["restriction"]=="set":
-                            f_dic["set_furniture"] = "desk"
-                            set_furnitures = [item for item in furniture_info if re.match(f_dic["set_furniture"] + "_" + r'\d+', item['name'])]
-                            if len(set_furnitures) == 0:#setする家具が配置されていない場合その家具も配置されない
-                                dic["x"], dic["y"] = random.uniform(min_x, max_x), random.uniform(min_y, max_y)
-                                dic["rotation"] = random.choice(f_dic["rand_rotation"])
-                            elif len(set_furnitures) != 0:
-                                set_furniture = random.choice(set_furnitures)
-                                dic["x"], dic["y"], dic["rotation"] = set_combo(dic["v_width"], dic["h_width"], min_x, max_x, min_y, max_y, set_furniture=set_furniture, delta=0.01)
-                        elif f_dic["restriction"]=="facing":
-                            f_dic["face_furniture"] = "TV&Stand"
-                            face_furnitures = [item for item in furniture_info if re.match(f_dic["face_furniture"] + "_" + r'\d+', item['name'])]
-                            if len(face_furnitures) == 0:#setする家具が配置されていない場合その家具も配置されない
-                                dic["x"], dic["y"] = random.uniform(min_x, max_x), random.uniform(min_y, max_y)
-                                dic["rotation"] = random.choice(f_dic["rand_rotation"])
-                            elif len(face_furnitures) != 0:
-                                face_furniture = random.choice(face_furnitures)
-                                dic["x"], dic["y"], dic["rotation"] = set_facing(dic["v_width"], dic["h_width"], min_x, max_x, min_y, max_y, face_furniture=face_furniture, delta=0.01)
-                        elif (f_dic["restriction"]==""):
-                            dic["x"], dic["y"] = random.uniform(min_x, max_x), random.uniform(min_y, max_y)
-                            dic["rotation"] = dic["rotation"] = random.choice(f_dic["rotation_range"])
-                        fur = Furniture(dic["v_width"], dic["h_width"], dic["rotation"], f_dic["name"], None)
-                        error_flag = self.plot_furniture([fur], [[dic["x"], dic["y"]]])
-                        if error_flag[0]!=0:
-                            self.clear_furniture(furniture_index=-1)
-                            counter += 1
-                        elif error_flag[0]==0:
-                            furniture_info.append(dic)
-                            break
-                        if counter>50:#50回以上エラーが出たら論理的におけないと判断し、もう一度全ての家具を置きなおす
-                            self.clear_furniture(all_clear=True)
-                            restart = True
-                            break
-                    if restart:
-                        break
-                    
-                else:
-                    dic["name"] = name
-                    dic['exist'] = 0
-                    dic["x"], dic["y"] = 0, 0
-                    dic["rotation"] = 0
-                    dic["v_width"] = 0
-                    dic["h_width"] = 0
-                    furniture_info.append(dic)
-            if not restart:  # もし再開フラグがFalseの場合、外部ループを終了
-                break
-        return furniture_info
 
 def create_rectangle(center, width, height, angle, color):
     """四角形を作成する関数
@@ -352,25 +302,25 @@ def set_combo(v_width, h_width, min_x, max_x, min_y, max_y, set_furniture=None, 
         セットでおく家具の情報が入った辞書オブジェクト
     - rand_rotation : 一緒におく家具がない場合の解き様
     """
-    set_f_x, set_f_y, set_f_rotation = set_furniture["x"] + delta*math.sin(math.radians(set_furniture["rotation"])), set_furniture["y"] - delta*math.cos(math.radians(set_furniture["rotation"])), set_furniture["rotation"]
+    set_f_x, set_f_y, set_f_rotation = set_furniture.x + delta*math.sin(math.radians(set_furniture.rotation)), set_furniture.y - delta*math.cos(math.radians(set_furniture.rotation)), set_furniture.rotation
     rand = random.choice([0, 1, 2, 3]) 
     if rand == 0:
-        set_f_rand_len = random.uniform(0, set_furniture["h_width"] - v_width)
+        set_f_rand_len = random.uniform(0, set_furniture.width - v_width)
         x = set_f_x + set_f_rand_len*math.cos(math.radians(set_f_rotation)) + v_width*math.cos(math.radians(set_f_rotation)) + h_width*math.sin(math.radians(set_f_rotation))
         y = set_f_y + set_f_rand_len*math.sin(math.radians(set_f_rotation)) + v_width*math.sin(math.radians(set_f_rotation)) - h_width*math.cos(math.radians(set_f_rotation))
         rotation = set_f_rotation + 90
     elif rand == 1:
-        set_f_rand_len = random.uniform(0, set_furniture["v_width"] - v_width)
-        x = set_f_x + set_furniture["h_width"]*math.cos(math.radians(set_f_rotation)) - set_f_rand_len*math.sin(math.radians(set_f_rotation)) + h_width*math.cos(math.radians(set_f_rotation)) - v_width*math.sin(math.radians(set_f_rotation))
-        y = set_f_y + set_furniture["h_width"]*math.sin(math.radians(set_f_rotation)) + set_f_rand_len*math.cos(math.radians(set_f_rotation)) + h_width*math.sin(math.radians(set_f_rotation)) + v_width*math.cos(math.radians(set_f_rotation))
+        set_f_rand_len = random.uniform(0, set_furniture.length - v_width)
+        x = set_f_x + set_furniture.width*math.cos(math.radians(set_f_rotation)) - set_f_rand_len*math.sin(math.radians(set_f_rotation)) + h_width*math.cos(math.radians(set_f_rotation)) - v_width*math.sin(math.radians(set_f_rotation))
+        y = set_f_y + set_furniture.width*math.sin(math.radians(set_f_rotation)) + set_f_rand_len*math.cos(math.radians(set_f_rotation)) + h_width*math.sin(math.radians(set_f_rotation)) + v_width*math.cos(math.radians(set_f_rotation))
         rotation = set_f_rotation + 180
     elif rand == 2:
-        set_f_rand_len = random.uniform(0, set_furniture["h_width"] - v_width)
-        x = set_f_x + set_f_rand_len*math.cos(math.radians(set_f_rotation)) - h_width*math.sin(math.radians(set_f_rotation)) - set_furniture["v_width"]*math.sin(math.radians(set_f_rotation))
-        y = set_f_y + set_f_rand_len*math.sin(math.radians(set_f_rotation)) + h_width*math.cos(math.radians(set_f_rotation)) + set_furniture["v_width"]*math.cos(math.radians(set_f_rotation))
+        set_f_rand_len = random.uniform(0, set_furniture.width - v_width)
+        x = set_f_x + set_f_rand_len*math.cos(math.radians(set_f_rotation)) - h_width*math.sin(math.radians(set_f_rotation)) - set_furniture.length*math.sin(math.radians(set_f_rotation))
+        y = set_f_y + set_f_rand_len*math.sin(math.radians(set_f_rotation)) + h_width*math.cos(math.radians(set_f_rotation)) + set_furniture.length*math.cos(math.radians(set_f_rotation))
         rotation = set_f_rotation - 90
     elif rand == 3:
-        set_f_rand_len = random.uniform(0, set_furniture["v_width"] - v_width)
+        set_f_rand_len = random.uniform(0, set_furniture.length - v_width)
         x = -1*set_f_rand_len*math.sin(math.radians(set_f_rotation)) - h_width*math.cos(math.radians(set_f_rotation))
         y = set_f_rand_len*math.cos(math.radians(set_f_rotation)) - h_width*math.sin(math.radians(set_f_rotation))
         rotation = set_f_rotation
@@ -379,8 +329,8 @@ def set_combo(v_width, h_width, min_x, max_x, min_y, max_y, set_furniture=None, 
 def set_facing(v_width, h_width, min_x, max_x, min_y, max_y, face_furniture, delta=0.01):
     """家具配置の際に特定の家具と向かい合いになるように配置するための関数
     """
-    face_rotation = face_furniture["rotation"]
-    face_x, face_y, face_h, face_v = face_furniture["x"], face_furniture["y"], face_furniture["h_width"], face_furniture["v_width"]
+    face_rotation = face_furniture.rotation
+    face_x, face_y, face_h, face_v = face_furniture.x, face_furniture.y, face_furniture.width, face_furniture.length
     if face_rotation == 0:
         x, y, rotation = random.uniform(face_x+h_width+face_h, max_x), face_y + face_v/2 + v_width/2, 180
     elif face_rotation == 90:
@@ -608,6 +558,89 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
     #print(f"room_info{room_info}")
     #print(room_info.columns)
     return room_info
+
+
+def generate_room2(floor_object:Floor, furniture_list:list[Furniture], generate_num:int, windows:list=None, doors:list=None):
+    """ランダムな家具配置の情報を生成する関数
+    Parameters
+    ---------
+    room_width : int
+        部屋の横幅
+    room_length : int
+        部屋の縦幅
+    furnitures : list
+        配置する家具の情報を辞書オブジェクトでいれたリスト
+        ex) furnitures = [
+            {"name":ソファ, "width":1.4, "length":0.5, "rotation_range":[0, 90, 180], "restriction":["alongwall", "set"], "set_furniture":ベッド},
+            {...}
+        ]
+    generate_num : int
+        何パターンの家具配置を出力するか
+    windows : list
+        部屋の窓の端を示したもの(詳しくはRoomクラスの説明で)
+    doors : list
+        部屋のドアの端を示したもの(詳しくはRoomクラスの説明で)
+
+    Returns
+    -------
+    room_info : pd.DataFrame
+        各家具配置パターンでの家具の情報が入ったdataframe
+    """
+    #print(f'''FURNITURES : {furnitures}''')
+    edges = [
+        [0, 0],
+        [0, floor_object.length],
+        [floor_object.width, floor_object.length],
+        [floor_object.width, 0]
+    ]
+    rooms_furniture_placement_list = list()
+    for I in range(generate_num):
+        room = Room(edges, windows=windows, doors=doors)
+        room.plot_room()
+        furnitureplace_list = room.place_furnitures_with_restriction(furniture_objects_list=furniture_list)
+        rooms_furniture_placement_list.append(furnitureplace_list)
+    rooms_furniture_placement_df = convert_furniture_list_to_dataframe(rooms_furniture_placement_list)
+    return rooms_furniture_placement_df        
+        print("------------------------")
+        for i in furniture_info_list:
+            print(f'''COLUMN:{i}''')
+        #各家具の相対的な距離を算出したカラムを追加        
+        for i in furniture_info_list:
+            for furniture_name in furniture_names:
+                if i['exist'] == 0:
+                    i[f'd_{furniture_name}'] = 0
+                elif i["name"]!=furniture_name:
+                    distance = find_dict_by_name(furniture_info_list, furniture_name, i)
+                    i[f"""d_{furniture_name}"""] = distance
+                else:
+                    i[f'd_{furniture_name}'] = 0
+        #print(f'''FURNITURE INFO 1: {furniture_info_list[0]}''')
+        #print(f'''FURNITURE INFO 2: {furniture_info_list[1]}''')
+        #print(f'''furnniutre{furniture_info_list}''')
+        for furniture_info in furniture_info_list:
+            df = pd.DataFrame(furniture_info, index=[0])
+            df["room"] = f"""room_{str(I)}"""# dataframeに生成されたランダムな部屋配置の番号を追加
+            #部屋の縦横に関してのカラムを追加
+            df["room_h_length"] = room_width
+            df["room_v_length"] = room_length
+            room_info = pd.concat([room_info, df])
+    room_info["target"] = "uninspected"
+    room_info = rereformat_dataframe(room_info)
+    room_info = room_info[column_names]
+    for column in list(room_info.columns):
+        print(f"column{column}")
+    #print(f"room_info{room_info}")
+    #print(room_info.columns)
+    return room_info
+
+def convert_furniture_list_to_dataframe(furnitureplace_object_list):
+    """furnitureplaceオブジェクトが格納されているリストからAIの機会学習用dataframeへの変換
+    """
+    rooms_furniture_placement_df = pd.DataFrame()
+    
+
+
+    return 
 
 class Net(nn.Module):
     def __init__(self, n_features):
