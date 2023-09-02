@@ -208,7 +208,7 @@ class Room():
                         elif f_dic["restriction"].split("_")[0]=="set":
                             # random_furnitureから条件に合う辞書オブジェクトを抜き取る
                             set_furniture_name = f_dic["restriction"].split("_")[1]
-                            furnitures_targeted_for_set = [item for item in random_furniture if item['name'].startswith(set_furniture_name) and item.get('exist') == 1]
+                            furnitures_targeted_for_set = [item for item in furniture_info if item['name'].startswith(set_furniture_name) and item.get('exist') == 1]
                             if len(furnitures_targeted_for_set) == 0:#setする家具が配置されていない場合その家具も配置されない
                                 dic["x"], dic["y"] = random.uniform(min_x, max_x), random.uniform(min_y, max_y)
                                 dic["rotation"] = random.choice(f_dic["rand_rotation"])
@@ -218,7 +218,7 @@ class Room():
                         elif f_dic["restriction"].split("_")[0]=="facing":
                             # random_furnitureから条件に合う辞書オブジェクトを抜き取る
                             facing_furniture_name = f_dic["restriction"].split("_")[1]
-                            furnitures_targeted_for_facing = [item for item in random_furniture if item['name'].startswith(facing_furniture_name) and item.get('exist') == 1]
+                            furnitures_targeted_for_facing = [item for item in furniture_info if item['name'].startswith(facing_furniture_name) and item.get('exist') == 1]
                             if len(furnitures_targeted_for_facing) == 0:#setする家具が配置されていない場合その家具も配置されない
                                 dic["x"], dic["y"] = random.uniform(min_x, max_x), random.uniform(min_y, max_y)
                                 dic["rotation"] = random.choice(f_dic["rand_rotation"])
