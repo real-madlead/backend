@@ -15,6 +15,7 @@ class FurniturePlace(Furniture):
     x: float = Field(example=0)
     y: float = Field(example=0)
     rotation: float = Field(example=0)
+    
 
 # 床
 class Floor(BaseModel):
@@ -36,3 +37,4 @@ class FloorPlanInputSchema(BaseModel):
 class FloorPlanOutputSchema(BaseModel):
     floor: Floor
     furnitures: list[FurniturePlace]
+    scoring_of_room_layout_using_AI: float
