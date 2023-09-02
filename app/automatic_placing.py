@@ -12,6 +12,30 @@ from torch import nn
 from torch.autograd import Variable
 from app.schemas import Furniture as FURNITURE
 import copy
+import logging
+
+# ロガーを作成
+logger = logging.getLogger(__name__)
+
+# ファイルハンドラを作成
+file_handler = logging.FileHandler('app.log')
+file_handler.setLevel(logging.DEBUG)
+
+# コンソールハンドラを作成
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# フォーマッタを作成
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(funName)s - %(message)s')
+
+# フォーマッタをハンドラに設定
+file_handler.setFormatter(formatter)
+console_handler.setFormatter(formatter)
+
+# ハンドラをロガーに追加
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
+
 
 class Furniture():
     """家具クラス
@@ -578,8 +602,8 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
     room_info = room_info[column_names]
     for column in list(room_info.columns):
         print(f"column{column}")
-    #print(f"room_info{room_info}")
-    #print(room_info.columns)
+    logger.info(f"room info = {room_info.to_string()}")
+    logger.info("writes")
     return room_info
 
 class Net(nn.Module):
