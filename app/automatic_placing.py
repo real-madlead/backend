@@ -10,18 +10,10 @@ import torch
 import torch
 from torch import nn
 from torch.autograd import Variable
-from app.schemas import Furniture as FURNITURE
+from app.schemas import Furniture, FloorPlanInputSchema, FloorPlanOutputSchema, FurnitureInput, FurniturePlace
 import copy
 
-class Furniture():
-    """家具クラス
-    """
-    def __init__(self, v_width:float, h_width:float, rotation:int=0, name:str=None, color:str=None):
-        self.v_width = v_width
-        self.h_width = h_width
-        self.rotation = rotation
-        self.name = name
-        self.color = color
+
 
 class Room():
     """部屋クラス
@@ -52,12 +44,6 @@ class Room():
     def plot_room(self):
         """家具を抜きにした部屋と窓、ドアを描画するメソッド
         """
-        x_coords = [edge[0] for edge in self.edges]
-        y_coords = [edge[1] for edge in self.edges]
-        
-        min_x, max_x = min(x_coords), max(x_coords)
-        min_y, max_y = min(y_coords), max(y_coords)
-        
         points = [lst for lst in self.edges]
         if self.windows!=None:
             wind_starts = [dic["start"] for dic in self.windows]
@@ -98,15 +84,13 @@ class Room():
             calculate_line = create_line(start=[line["x"][0], line["y"][0]], end=[line["x"][1], line["y"][1]], color=line["color"])
             self.line_objects.append(calculate_line)
         
-    def plot_furniture(self, furnitures:list, furnitures_coord:list):
+    def plot_furniture(self, furniture_places_list:list):
         """家具を配置するメソッド
 
         Parameters
         ----------
-        furnitures : list
-            家具オブジェクトが入ったリスト
-        furniture_coord : list
-            家具オブジェクトの位置が入ったリスト
+        furnitures : list[FurniturePlace]
+            FurniturePlaceオブジェクトが入ったリスト
 
         Returns
         ------
@@ -118,10 +102,10 @@ class Room():
         y_coords = [edge[1] for edge in self.edges]
         min_x, max_x = min(x_coords), max(x_coords)
         min_y, max_y = min(y_coords), max(y_coords)
-        for furniture, coord in zip(furnitures, furnitures_coord): 
-            calculate_furniture = create_rectangle(coord, furniture.h_width, furniture.v_width, furniture.rotation, furniture.color)
+        for furniture_place in furniture_places_list: 
+            calculate_furniture = create_rectangle([furniture_place.x, furniture_place.y], furniture_place.width, furniture_place.length, furniture_place.rotation, "blue")
         
-            if (multi_check_overlap(calculate_furniture, self.line_objects)) or (coord[0]<=min_x) or (coord[0]>=max_x) or (coord[1]<=min_y) or (coord[1]>=max_y):
+            if (multi_check_overlap(calculate_furniture, self.line_objects)) or (furniture_place.x<=min_x) or (furniture_place.x>=max_x) or (furniture_place.y<=min_y) or (furniture_place.y>=max_y):
                 error_flag.append(1)
             elif multi_check_overlap(calculate_furniture, self.furniture_objects):
                 error_flag.append(2)
@@ -145,18 +129,18 @@ class Room():
         if all_clear:
             self.furniture_objects = list()
     
-    def random_plot_furniture(self, random_furniture:list):
+    def place_furnitures_with_restriction(self, furniture_objects_list:list):
         """家具を部屋、他の家具とかさならないように配置するメソッド
 
         Parameters
         ---------
-        random_furniture : list
-            ランダムに配置する家具の情報が辞書オブジェクトで入ったリスト
+        furniture_objects_list : list[Furniture]
+            Furnitureオブジェクトが入ったリスト
         
         Returns
         -------
-        furniture_info : list
-            各家具の情報が記録してある辞書オブジェクトが入ってるリスト
+        furnitureplace_objects_list : list[FurniturePlace]
+            FurniturePlaceオブジェクトが入ったリスト
         """
         x_coords = [edge[0] for edge in self.edges]
         y_coords = [edge[1] for edge in self.edges]
@@ -165,8 +149,51 @@ class Room():
         max_attempts = 10000
         for _ in range(max_attempts):
             restart = False  # ループを再開するかどうかをチェックするフラグ
-            furniture_info = list()
-            for f_dic in random_furniture:
+            furnitureplace_objects_list = list()
+            for furniture_object in furniture_objects_list:
+                counter = 0
+                while True:
+                    if furniture_object.restriction=="alongwall":
+                        x, y, rotation = set_alongwall(min_x, max_x, min_y, max_y, furniture_object.rand_rotation, delta=0.01)
+                    elif furniture_object.restriction=="alongwall direction center":
+                        x, y, rotation = set_alongwall_dir_ctr(furniture_object.length, min_x, max_x, min_y, max_y, delta=0.01)
+                    elif furniture_object.restriction.split("_")[0]=="set":
+
+                        x, y, rotation = 
+                    elif furniture_object.restriction.split("_")[0]=="facing":
+                        
+                        x, y, rotation = 
+                    else:
+                        x, y, rotation = random.uniform(min_x, max_x), random.uniform(min_y, max_y), random.choice(furniture_object.rand_rotation)
+                    furnitureplace_object = FurniturePlace(
+                        id = furniture_object.id,
+                        name = furniture_object.name,
+                        width = furniture_object.width,
+                        length = furniture_object.length,
+                        restriction = furniture_object.restriction,
+                        rand_rotation = furniture_object.rand_rotation,
+                        x = x,
+                        y = y,
+                        rotation = rotation
+                    )
+                    error_flag = self.plot_furniture([furnitureplace_object])
+                    if error_flag[0]!=0:
+                        self.clear_furniture(furniture_index=-1)
+                        counter += 1
+                    elif error_flag[0]==0:
+                        furnitureplace_objects_list.append(furnitureplace_object)
+                        break
+                    if counter>50:#50回以上エラーが出たら論理的におけないと判断し、もう一度全ての家具を置きなおす
+                        self.clear_furniture(all_clear=True)
+                        restart = True
+                        break
+                if restart:
+                    break
+            if not restart:  # もし再開フラグがFalseの場合、外部ループを終了
+                break
+        return furnitureplace_objects_list
+
+                ####
                 dic = dict()
                 name = f_dic['name']
                 if f_dic["exist"]==1:
