@@ -205,24 +205,26 @@ class Room():
                             dic["x"], dic["y"], dic["rotation"] = set_alongwall(min_x, max_x, min_y, max_y, f_dic["rand_rotation"], delta=0.01)
                         elif f_dic["restriction"]=="alongwall direction center":
                             dic["x"], dic["y"], dic["rotation"] = set_alongwall_dir_ctr(f_dic["length"], min_x, max_x, min_y, max_y, delta=0.01)
-                        elif f_dic["restriction"]=="set":
-                            f_dic["set_furniture"] = "desk"
-                            set_furnitures = [item for item in furniture_info if re.match(f_dic["set_furniture"] + "_" + r'\d+', item['name'])]
-                            if len(set_furnitures) == 0:#setする家具が配置されていない場合その家具も配置されない
+                        elif f_dic["restriction"].split("_")[0]=="set":
+                            # random_furnitureから条件に合う辞書オブジェクトを抜き取る
+                            set_furniture_name = f_dic["restriction"].split("_")[1]
+                            furnitures_targeted_for_set = [item for item in random_furniture if item['name'].startswith(set_furniture_name) and item.get('exist') == 1]
+                            if len(furnitures_targeted_for_set) == 0:#setする家具が配置されていない場合その家具も配置されない
                                 dic["x"], dic["y"] = random.uniform(min_x, max_x), random.uniform(min_y, max_y)
                                 dic["rotation"] = random.choice(f_dic["rand_rotation"])
-                            elif len(set_furnitures) != 0:
-                                set_furniture = random.choice(set_furnitures)
-                                dic["x"], dic["y"], dic["rotation"] = set_combo(dic["v_width"], dic["h_width"], min_x, max_x, min_y, max_y, set_furniture=set_furniture, delta=0.01)
-                        elif f_dic["restriction"]=="facing":
-                            f_dic["face_furniture"] = "TV&Stand"
-                            face_furnitures = [item for item in furniture_info if re.match(f_dic["face_furniture"] + "_" + r'\d+', item['name'])]
-                            if len(face_furnitures) == 0:#setする家具が配置されていない場合その家具も配置されない
+                            elif len(furnitures_targeted_for_set) != 0:
+                                furniture_targeted_for_set = random.choice(furnitures_targeted_for_set)
+                                dic["x"], dic["y"], dic["rotation"] = set_combo(dic["v_width"], dic["h_width"], min_x, max_x, min_y, max_y, set_furniture=furniture_targeted_for_set, delta=0.01)
+                        elif f_dic["restriction"].split("_")[0]=="facing":
+                            # random_furnitureから条件に合う辞書オブジェクトを抜き取る
+                            facing_furniture_name = f_dic["restriction"].split("_")[1]
+                            furnitures_targeted_for_facing = [item for item in random_furniture if item['name'].startswith(facing_furniture_name) and item.get('exist') == 1]
+                            if len(furnitures_targeted_for_facing) == 0:#setする家具が配置されていない場合その家具も配置されない
                                 dic["x"], dic["y"] = random.uniform(min_x, max_x), random.uniform(min_y, max_y)
                                 dic["rotation"] = random.choice(f_dic["rand_rotation"])
-                            elif len(face_furnitures) != 0:
-                                face_furniture = random.choice(face_furnitures)
-                                dic["x"], dic["y"], dic["rotation"] = set_facing(dic["v_width"], dic["h_width"], min_x, max_x, min_y, max_y, face_furniture=face_furniture, delta=0.01)
+                            elif len(furnitures_targeted_for_facing) != 0:
+                                furniture_targeted_for_facing = random.choice(furnitures_targeted_for_facing)
+                                dic["x"], dic["y"], dic["rotation"] = set_facing(dic["v_width"], dic["h_width"], min_x, max_x, min_y, max_y, face_furniture=furniture_targeted_for_facing, delta=0.01)
                         elif (f_dic["restriction"]==""):
                             dic["x"], dic["y"] = random.uniform(min_x, max_x), random.uniform(min_y, max_y)
                             dic["rotation"] = dic["rotation"] = random.choice(f_dic["rotation_range"])
