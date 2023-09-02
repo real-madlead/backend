@@ -568,12 +568,12 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
             for fur_name in furniture_names:
                 column_names.append(f'''{furniture_name}_d_{fur_name}''')
                 
-        #家具をランダムで複製
+       #家具をランダムで複製
         dummy_furniture_list = copy.deepcopy(furniture_list)
         new_random_furniture = make_random_furniture_prob_set(dummy_furniture_list, furniture_names)#dictにexistキーを追加しなきゃいけない
+        sorted_new_random_furniture = sorted(new_random_furniture, key=lambda x: furniture_names.index(x["name"]))
         #print(f'''ALL FURNITURE : {new_random_furniture}''')
-        furniture_info_list = room.random_plot_furniture(random_furniture=new_random_furniture)
-        #print(f'''FURNITURE INFO list: {furniture_info_list}''')
+        furniture_info_list = room.random_plot_furniture(random_furniture=sorted_new_random_furniture)
         print("------------------------")
         for i in furniture_info_list:
             print(f'''COLUMN:{i}''')
@@ -605,6 +605,74 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
     logger.info(f"room info = {room_info.to_string()}")
     logger.info("writes")
     return room_info
+
+
+
+def generate_room2():
+    print(f'''FURNITURES : {furnitures}''')
+    furniture_list = [{"name":furniture.name, "width":furniture.width, "length":furniture.length, "rand_rotation":furniture.rand_rotation, "restriction":furniture.restriction} for furniture in furnitures]
+    edges = [
+        [0, 0],
+        [0, room_length],
+        [room_width, room_length],
+        [room_width, 0]
+    ]
+    room_info = pd.DataFrame()
+    for I in range(generate_num):
+        room = Room(edges, windows=windows, doors=doors)
+        room.plot_room()
+        furniture_name_non_duplicated = ["bed", "desk", "chair","TV&Stand", "sofa", "light", "plant", "shelf", "chest"]
+        furniture_names = [f"{item}_{i}" for item in furniture_name_non_duplicated for i in range(1, 4)]#[sofa_1, sofa_2, ..]
+        column_names = ["room_num", "room_v", "room_h", "target"]
+        for furniture_name in furniture_names:
+            column_names.append(f'''{furniture_name}_exist''')
+            column_names.append(f'''{furniture_name}_v_width''')
+            column_names.append(f'''{furniture_name}_h_width''')
+            column_names.append(f'''{furniture_name}_x''')
+            column_names.append(f'''{furniture_name}_y''')
+            column_names.append(f'''{furniture_name}_rotation''')
+            for fur_name in furniture_names:
+                column_names.append(f'''{furniture_name}_d_{fur_name}''')
+                
+        #家具をランダムで複製
+        dummy_furniture_list = copy.deepcopy(furniture_list)
+        new_random_furniture = make_random_furniture_prob_set(dummy_furniture_list, furniture_names)#dictにexistキーを追加しなきゃいけない
+        sorted_new_random_furniture = sorted(new_random_furniture, key=lambda x: furniture_names.index(x["name"]))
+        #print(f'''ALL FURNITURE : {new_random_furniture}''')
+        furniture_info_list = room.random_plot_furniture(random_furniture=sorted_new_random_furniture)
+        #print(f'''FURNITURE INFO list: {furniture_info_list}''')
+        print("------------------------")
+        for i in furniture_info_list:
+            print(f'''COLUMN:{i}''')
+        #各家具の相対的な距離を算出したカラムを追加        
+        for i in furniture_info_list:
+            for furniture_name in furniture_names:
+                if i['exist'] == 0:
+                    i[f'd_{furniture_name}'] = 0
+                elif i["name"]!=furniture_name:
+                    distance = find_dict_by_name(furniture_info_list, furniture_name, i)
+                    i[f"""d_{furniture_name}"""] = distance
+                else:
+                    i[f'd_{furniture_name}'] = 0
+        #print(f'''FURNITURE INFO 1: {furniture_info_list[0]}''')
+        #print(f'''FURNITURE INFO 2: {furniture_info_list[1]}''')
+        #print(f'''furnniutre{furniture_info_list}''')
+        for furniture_info in furniture_info_list:
+            df = pd.DataFrame(furniture_info, index=[0])
+            df["room"] = f"""room_{str(I)}"""# dataframeに生成されたランダムな部屋配置の番号を追加
+            #部屋の縦横に関してのカラムを追加
+            df["room_h_length"] = room_width
+            df["room_v_length"] = room_length
+            room_info = pd.concat([room_info, df])
+    room_info["target"] = "uninspected"
+    room_info = rereformat_dataframe(room_info)
+    room_info = room_info[column_names]
+    for column in list(room_info.columns):
+        print(f"column{column}")
+    #print(f"room_info{room_info}")
+    #print(room_info.columns)
+    return room_info
+
 
 class Net(nn.Module):
     def __init__(self, n_features):
