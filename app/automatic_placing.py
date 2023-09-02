@@ -12,30 +12,6 @@ from torch import nn
 from torch.autograd import Variable
 from app.schemas import Furniture as FURNITURE
 import copy
-import logging
-
-# ロガーを作成
-logger = logging.getLogger(__name__)
-
-# ファイルハンドラを作成
-file_handler = logging.FileHandler('app.log')
-file_handler.setLevel(logging.DEBUG)
-
-# コンソールハンドラを作成
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
-
-# フォーマッタを作成
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(funName)s - %(message)s')
-
-# フォーマッタをハンドラに設定
-file_handler.setFormatter(formatter)
-console_handler.setFormatter(formatter)
-
-# ハンドラをロガーに追加
-logger.addHandler(file_handler)
-logger.addHandler(console_handler)
-
 
 class Furniture():
     """家具クラス
@@ -604,75 +580,6 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
     room_info = room_info[column_names]
     for column in list(room_info.columns):
         print(f"column{column}")
-    logger.info(f"room info = {room_info.to_string()}")
-    logger.info("writes")
-    return room_info
-
-
-
-def generate_room2():
-    print(f'''FURNITURES : {furnitures}''')
-    furniture_list = [{"name":furniture.name, "width":furniture.width, "length":furniture.length, "rand_rotation":furniture.rand_rotation, "restriction":furniture.restriction} for furniture in furnitures]
-    edges = [
-        [0, 0],
-        [0, room_length],
-        [room_width, room_length],
-        [room_width, 0]
-    ]
-    room_info = pd.DataFrame()
-    for I in range(generate_num):
-        room = Room(edges, windows=windows, doors=doors)
-        room.plot_room()
-        furniture_name_non_duplicated = ["bed", "desk", "chair","TV&Stand", "sofa", "light", "plant", "shelf", "chest"]
-        furniture_names = [f"{item}_{i}" for item in furniture_name_non_duplicated for i in range(1, 4)]#[sofa_1, sofa_2, ..]
-        column_names = ["room_num", "room_v", "room_h", "target"]
-        for furniture_name in furniture_names:
-            column_names.append(f'''{furniture_name}_exist''')
-            column_names.append(f'''{furniture_name}_v_width''')
-            column_names.append(f'''{furniture_name}_h_width''')
-            column_names.append(f'''{furniture_name}_x''')
-            column_names.append(f'''{furniture_name}_y''')
-            column_names.append(f'''{furniture_name}_rotation''')
-            for fur_name in furniture_names:
-                column_names.append(f'''{furniture_name}_d_{fur_name}''')
-                
-        #家具をランダムで複製
-        dummy_furniture_list = copy.deepcopy(furniture_list)
-        new_random_furniture = make_random_furniture_prob_set(dummy_furniture_list, furniture_names)#dictにexistキーを追加しなきゃいけない
-        sorted_new_random_furniture = sorted(new_random_furniture, key=lambda x: furniture_names.index(x["name"]))
-        #print(f'''ALL FURNITURE : {new_random_furniture}''')
-        furniture_info_list = room.random_plot_furniture(random_furniture=sorted_new_random_furniture)
-        #print(f'''FURNITURE INFO list: {furniture_info_list}''')
-        print("------------------------")
-        for i in furniture_info_list:
-            print(f'''COLUMN:{i}''')
-        #各家具の相対的な距離を算出したカラムを追加        
-        for i in furniture_info_list:
-            for furniture_name in furniture_names:
-                if i['exist'] == 0:
-                    i[f'd_{furniture_name}'] = 0
-                elif i["name"]!=furniture_name:
-                    distance = find_dict_by_name(furniture_info_list, furniture_name, i)
-                    i[f"""d_{furniture_name}"""] = distance
-                else:
-                    i[f'd_{furniture_name}'] = 0
-        #print(f'''FURNITURE INFO 1: {furniture_info_list[0]}''')
-        #print(f'''FURNITURE INFO 2: {furniture_info_list[1]}''')
-        #print(f'''furnniutre{furniture_info_list}''')
-        for furniture_info in furniture_info_list:
-            df = pd.DataFrame(furniture_info, index=[0])
-            df["room"] = f"""room_{str(I)}"""# dataframeに生成されたランダムな部屋配置の番号を追加
-            #部屋の縦横に関してのカラムを追加
-            df["room_h_length"] = room_width
-            df["room_v_length"] = room_length
-            room_info = pd.concat([room_info, df])
-    room_info["target"] = "uninspected"
-    room_info = rereformat_dataframe(room_info)
-    room_info = room_info[column_names]
-    for column in list(room_info.columns):
-        print(f"column{column}")
-    #print(f"room_info{room_info}")
-    #print(room_info.columns)
     return room_info
 
 
@@ -697,13 +604,19 @@ def get_high_score_indices(model_path, test_df):
     with torch.no_grad():
         predictions = model(X_test)
 
+
     # 予測結果をPyTorchのテンソルからnumpy配列に変換
     predictions_list = predictions.numpy().flatten().tolist()
+    print(f'prediction_list: {predictions_list}')
 
     # リスト内の要素が閾値を超える場合、そのインデックスを取得
     max_index = predictions_list.index(max(predictions_list))
 
-    return max_index
+    max_score = predictions_list[max_index]
+
+    print(f'max_score: {max_score}')
+    print(f'max_index: {max_index}')
+    return max_index, max_score
 
 def squeeze_room(df):
     """AIによる絞り込み(未実装)
@@ -722,10 +635,9 @@ def squeeze_room(df):
     print(f'''----------------->{df.shape[1]}''')
     model_path = './AI_model/torch_model.pth'
     df_test = df.drop(['room_num', 'target'], axis=1)
-    index = get_high_score_indices(model_path, df_test)
+    index, score = get_high_score_indices(model_path, df_test)
     
-    index = 0
-    return index
+    return index, score
 
 
 def get_position(name:str, name_counter:dict, series):
