@@ -10,6 +10,7 @@ import torch
 import torch
 from torch import nn
 from torch.autograd import Variable
+from app.schemas import FloorPlanOutputSchema, FurniturePlace
 from app.schemas import Furniture as FURNITURE
 import copy
 
@@ -639,6 +640,8 @@ def squeeze_room(df):
     
     return index, score
 
+def predict(model_path, df)
+
 
 def get_position(name:str, name_counter:dict, series):
     """家具の置き場所を探す関数
@@ -660,3 +663,85 @@ def get_position(name:str, name_counter:dict, series):
     x, y, rotation = series[f'''{cur_name}_x'''], series[f'''{cur_name}_y'''], series[f'''{cur_name}_rotation''']
     return x, y, rotation
 
+def recommend_furniture_using_AI(
+        candidate_furnitures_for_additional_placement,
+        current_furniture_layout,
+        current_best_score
+                                 ):
+    """AIにより渡された部屋に新たな家具を配置するようにおすすめする
+    Parameters
+    ---------
+    candidate_furnitures_for_additional_placement : list(FURNITURE)
+        追加で配置する家具の候補
+    current_furniture_layout : FloorPlanOutputSchema
+        現在の家具配置
+    current_score : flaot
+        現在の最高スコア
+    
+    Returns
+    ------
+    recommend_furnitureplace : FurniturePlace
+        AIが最適だと考えた家具の配置
+    score : float
+        おすすめの家具を配置した場合の部屋のスコア 
+    """
+    edges = [
+        [0, 0],
+        [0, current_furniture_layout.floor.length],
+        [current_furniture_layout.floor.width, current_furniture_layout.floor.length],
+        [current_furniture_layout.floor.width, 0]
+    ]
+    room = Room(edges=edges)
+    room.plot_room()
+    furnitures_list = [Furniture(v_width=furnitureplace.length, h_width=furnitureplace.width, rotation=furnitureplace.rotation, name=furnitureplace.name) for furnitureplace in current_furniture_layout.furnitures]
+    furnitures_coord_list = [[furniture_coord.x, furniture_coord.y] for furniture_coord in current_furniture_layout.furnitures]
+    _ = room.plot_furniture(furnitrues=furnitures_list, furnitures_coord=furnitures_coord_list)
+    while True:
+        for candidate_furniture in candidate_furnitures_for_additional_placement:
+            new_placement_furniture = [Furniture(v_width=candidate_furniture.length, h_width=candidate_furniture.width, rotation)]
+            e_flag =  room.plot_furniture()
+            if e_flag[0]== :
+                continue
+            #AIによる採点
+            if current_best_score <= score:
+                return recommend_furnitureplace, score
+
+
+ def __init__(self, v_width:float, h_width:float, rotation:int=0, name:str=None, color:str=None):
+        self.v_width = v_width
+        self.h_width = h_width
+        self.rotation = rotation
+        self.name = name
+        self.color = color
+ def plot_furniture(self, furnitures:list, furnitures_coord:list):
+        """家具を配置するメソッド
+
+        Parameters
+        ----------
+        furnitures : list
+            家具オブジェクトが入ったリスト
+        furniture_coord : list
+            家具オブジェクトの位置が入ったリスト
+
+        Returns
+        ------
+        error_flag : list
+            
+
+ room_info = pd.DataFrame()
+    for I in range(generate_num):
+        room = Room(edges, windows=windows, doors=doors)
+        room.plot_room()
+        furniture_name_non_duplicated = ["bed", "desk", "chair","TV&Stand", "sofa", "light", "plant", "shelf", "chest"]
+        furniture_names = [f"{item}_{i}" for item in furniture_name_non_duplicated for i in range(1, 4)]#[sofa_1, sofa_2, ..]
+        column_names = ["room_num", "room_v", "room_h", "target"]
+        for furniture_name in furniture_names:
+            column_names.append(f'''{furniture_name}_exist''')
+            column_names.append(f'''{furniture_name}_v_width''')
+            column_names.append(f'''{furniture_name}_h_width''')
+            column_names.append(f'''{furniture_name}_x''')
+            column_names.append(f'''{furniture_name}_y''')
+            column_names.append(f'''{furniture_name}_rotation''')
+            for fur_name in furniture_names:
+                column_names.append(f'''{furniture_name}_d_{fur_name}''')
+                
