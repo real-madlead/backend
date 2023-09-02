@@ -37,7 +37,8 @@ def generate_floor_plan(
     #print(f'''INPUT : {furniture_list}''')
     generated_room = generate_room(room_width=floor_width, room_length=floor_length, furnitures=furniture_list, generate_num=10)
     #AIによりベストな家具配置を見つける
-    squeezed_room = generated_room.iloc[squeeze_room(generated_room)]
+    best_arranged_index, best_arranged_score = squeeze_room(generated_room)
+    squeezed_room = generated_room.iloc[best_arranged_index]
 
     furniture_position_list = []
     #各家具の出現数を数えるための辞書
@@ -62,7 +63,7 @@ def generate_floor_plan(
         )
         furniture_position_list.append(furniture_postion)
     
-    return FloorPlanOutputSchema(floor=floor_info.floor, furnitures=furniture_position_list)
+    return FloorPlanOutputSchema(floor=floor_info.floor, furnitures=furniture_position_list, scoring_of_room_layout_using_AI=best_arranged_score)
 
 # 家具のリストを取得
 @router.get("/floor/furnitures")
