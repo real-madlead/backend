@@ -158,6 +158,7 @@ class Room():
         furniture_info : list
             各家具の情報が記録してある辞書オブジェクトが入ってるリスト
         """
+        print(random_furniture)
         x_coords = [edge[0] for edge in self.edges]
         y_coords = [edge[1] for edge in self.edges]
         min_x, max_x = min(x_coords), max(x_coords)
@@ -196,34 +197,40 @@ class Room():
 
                         #オプションでつけた最初の配置制限に従った配置を100パターン生成
                         if f_dic["restriction"][0]=="alongwall":
-                            for __ in range(100):
+                            for __ in range(10):
                                 x, y, rotation = set_alongwall(min_x, max_x, min_y, max_y, f_dic["rand_rotation"], delta=delta)
                                 arrangement_pattern_dict["x_patterns"].append(x)
                                 arrangement_pattern_dict["y_patterns"].append(y)
                                 arrangement_pattern_dict["rotation_patterns"].append(rotation)
                         elif f_dic["restriction"][0]=="alongwall direction center":
-                            for __ in range(100):
+                            for __ in range(10):
                                 x, y, rotation = set_alongwall(min_x, max_x, min_y, max_y, f_dic["rand_rotation"], delta=delta)
                                 arrangement_pattern_dict["x_patterns"].append(x)
                                 arrangement_pattern_dict["y_patterns"].append(y)
                                 arrangement_pattern_dict["rotation_patterns"].append(rotation)
                         elif "set" in f_dic["restriction"][0]:
-                            furnitures_targeted_for_set = [item for item in furniture_info if re.match(f_dic["restriction"].split("_")[1] + "_" + r'\d+', item['name'])]
+                            # random_furnitureから条件に合う辞書オブジェクトを抜き取る
+                            keyword = f_dic["restriction"].split("_")[1]
+                            furnitures_targeted_for_set = [item for item in random_furniture if item['name'].startswith(keyword) and item.get('exist') == 1]
+
                             if len(furnitures_targeted_for_set) == 0:
                                 x, y, rotation = random.uniform(min_x, max_x), random.uniform(min_y, max_y), random.choice(f_dic["rand_rotation"])
                             elif len(furnitures_targeted_for_set) != 0:
-                                for __ in range(100):
+                                for __ in range(10):
                                     furniture_targeted_for_set = random.choice(furnitures_targeted_for_set)
                                     x, y, rotation = set_combo(dic["v_width"], dic["h_width"], min_x, max_x, min_y, max_y, set_furniture=furniture_targeted_for_set, delta=delta)
                                     arrangement_pattern_dict["x_patterns"].append(x)
                                     arrangement_pattern_dict["y_patterns"].append(y)
                                     arrangement_pattern_dict["rotation_patterns"].append(rotation)
                         elif "facing" in f_dic["restriction"][0]:
-                            furnitures_targeted_for_facing = [item for item in furniture_info if re.match(f_dic["restriction"].split("_")[1] + "_" + r'\d+', item['name'])]
+                            # random_furnitureから条件に合う辞書オブジェクトを抜き取る
+                            keyword = f_dic["restriction"].split("_")[1]
+                            furnitures_targeted_for_facing = [item for item in random_furniture if item['name'].startswith(keyword) and item.get('exist') == 1]
+
                             if len(furnitures_targeted_for_facing) == 0:
                                 x, y, rotation = random.uniform(min_x, max_x), random.uniform(min_y, max_y), random.choice(f_dic["rand_rotation"])
                             elif len(furnitures_targeted_for_facing) != 0:
-                                for __ in range(100):
+                                for __ in range(10):
                                     furniture_targeted_for_facing = random.choice(furnitures_targeted_for_facing)
                                     x, y, rotation = set_facing(dic["v_width"], dic["h_width"], min_x, max_x, min_y, max_y, face_furniture=furniture_targeted_for_facing, delta=delta)
                                     arrangement_pattern_dict["x_patterns"].append(x)
@@ -232,7 +239,14 @@ class Room():
 
                         #最初の配置制限に従った配置パターンから他の配置制限に従っていないパターンを削除する
                         x_pattern_list, y_pattern_list, rotation_pattern_list = arrangement_pattern_dict["x_patterns"], arrangement_pattern_dict["y_patterns"], arrangement_pattern_dict["rotation_patterns"]
-                        list_of_indices_to_remove = list()
+                    
+                        list_of_indices_to_remove = find_index_of_restricted_element(
+                            x_patterns=x_pattern_list, y_patterns=y_pattern_list, rotation_patterns=rotation_pattern_list,
+                            v_width=f_dic["length"], h_width=f_dic["width"], min_x=min_x, max_x=max_x, min_y=min_y, max_y=max_y, 
+                            restriction=f_dic["restriction"], delta=delta, random_furniture=random_furniture
+                            )
+                        
+                        """
                         if "alongwall" in f_dic["restriction"]:
                             list_to_add_to_list_to_be_deleted = [index for index, x, y, rotation in zip(list(range(len(x_pattern_list))), x_pattern_list, y_pattern_list, rotation_pattern_list) if determine_if_arranged_by_alongwall(x, y, rotation)]
                             list_of_indices_to_remove += list_to_add_to_list_to_be_deleted   
@@ -246,10 +260,12 @@ class Room():
                             list_to_add_to_list_to_be_deleted = [index for index, x, y, rotation in zip(list(range(len(x_pattern_list))), x_pattern_list, y_pattern_list, rotation_pattern_list) if determine_if_arranged_by_facing(x, y, rotation)]   
                             list_of_indices_to_remove += list_to_add_to_list_to_be_deleted
                         list_of_indices_to_remove = list(set(list_of_indices_to_remove))
-                        list_of_indices_to_remove.sort(reverse=True)
-                        for index in list_of_indices_to_remove:
-                            for key in arrangement_pattern_dict:
-                                del arrangement_pattern_dict[key][index]
+                        """
+                        if len(list_of_indices_to_remove)!=0:
+                            list_of_indices_to_remove.sort(reverse=True)
+                            for index in list_of_indices_to_remove:
+                                for key in arrangement_pattern_dict:
+                                    del arrangement_pattern_dict[key][index]
                         #配置パターンがなくなってしまった場合に最初からやり直す
                         if len(arrangement_pattern_dict["x_patterns"])==0:
                             continue
@@ -257,7 +273,7 @@ class Room():
                         #実際に配置していき他の家具、壁との接触が無いかを判定していく
                         elif len(arrangement_pattern_dict["x_patterns"])!=0:
                             furnitures_furniture_arrangements_passed_placement_restriction = [
-                                Furniture(dic["v_width"], dic["h_width"], rotation f_dic["name"], None) for rotation in arrangement_pattern_dict["rotation_patterns"]
+                                Furniture(dic["v_width"], dic["h_width"], rotation, f_dic["name"], None) for rotation in arrangement_pattern_dict["rotation_patterns"]
                             ]
                             furniture_arrangements_passed_placement_restriction = [
                                 [x, y] for x, y in zip(arrangement_pattern_dict["x_patterns"], arrangement_pattern_dict["y_patterns"])
@@ -437,7 +453,54 @@ def set_facing(v_width, h_width, min_x, max_x, min_y, max_y, face_furniture, del
         x, y, rotation = face_x + face_v/2 + v_width/2, random.uniform(min_y ,face_y-h_width-face_h), 90
     return x, y, rotation
 
+def find_index_of_restricted_element(**kwargs):
+    """制限に引っかかっている要素のindexをサーチする関数
+    """
+    list_of_indices_to_remove = list()
+    if "alongwall" in kwargs["restriction"]:
+        list_to_add_to_list_to_be_deleted = [index for index, x, y, rotation in zip(
+            list(range(len(kwargs["x_patterns"]))), kwargs["x_patterns"], kwargs["y_patterns"], kwargs["rotation_patterns"])
+            if determine_if_arranged_by_alongwall(min_x=kwargs["min_x"], max_x=kwargs["max_x"], min_y=kwargs["min_y"], max_y=kwargs["max_y"],
+                                                  x=x, y=y, rotation=rotation, delta=kwargs["delta"])]
+        list_of_indices_to_remove += list_to_add_to_list_to_be_deleted
+
+    if "alongwall direction center" in kwargs["restriction"]:
+        list_to_add_to_list_to_be_deleted = [index for index, x, y, rotation in zip(
+            list(range(len(kwargs["x_patterns"]))), kwargs["x_patterns"], kwargs["y_patterns"], kwargs["rotation_patterns"])
+            if determine_if_arranged_by_alongwall_direction_center(min_x=kwargs["min_x"], max_x=kwargs["max_x"], min_y=kwargs["min_y"], max_y=kwargs["max_y"],
+                                                  x=x, y=y, rotation=rotation, delta=kwargs["delta"])]
+        list_of_indices_to_remove += list_to_add_to_list_to_be_deleted
+
+    if any("set" in item for item in kwargs["restriction"]):
+        # random_furnitureから条件に合う辞書オブジェクトを抜き取る
+        keyword = kwargs["restriction"].split("_")[1]
+        furnitures_targeted_for_set = [item for item in kwargs["random_furniture"] if item['name'].startswith(keyword) and item.get('exist') == 1]
+
+        list_to_add_to_list_to_be_deleted = [index for index, x, y, rotation in zip(
+            list(range(len(kwargs["x_patterns"]))), kwargs["x_patterns"], kwargs["y_patterns"], kwargs["rotation_patterns"])
+            if determine_if_arranged_by_set(min_x=kwargs["min_x"], max_x=kwargs["max_x"], min_y=kwargs["min_y"], max_y=kwargs["max_y"],
+                                                x=x, y=y, rotation=rotation, delta=kwargs["delta"], set_furnitures=furnitures_targeted_for_set)]
+        list_of_indices_to_remove += list_to_add_to_list_to_be_deleted
+    
+    if any("facing" in item for item in kwargs["restriction"]):
+        # random_furnitureから条件に合う辞書オブジェクトを抜き取る
+        keyword = kwargs["restriction"].split("_")[1]
+        furnitures_targeted_for_facing = [item for item in kwargs["random_furniture"] if item['name'].startswith(keyword) and item.get('exist') == 1]
+
+        list_to_add_to_list_to_be_deleted = [index for index, x, y, rotation in zip(
+            list(range(len(kwargs["x_patterns"]))), kwargs["x_patterns"], kwargs["y_patterns"], kwargs["rotation_patterns"])
+            if determine_if_arranged_by_facing(min_x=kwargs["min_x"], max_x=kwargs["max_x"], min_y=kwargs["min_y"], max_y=kwargs["max_y"],
+                                                x=x, y=y, rotation=rotation, delta=kwargs["delta"], face_furnitures=furnitures_targeted_for_facing)]
+        list_of_indices_to_remove += list_to_add_to_list_to_be_deleted
+
+    list_of_indices_to_remove = list(set(list_of_indices_to_remove))
+    return list_of_indices_to_remove
+    
+        
+    
+
 def determine_if_arranged_by_alongwall(min_x, max_x, min_y, max_y, x, y, rotation, delta):
+    
     if (x==min_x + delta) or (x==max_x - delta) or (y==min_y + delta) or (y==max_y - delta):
         return True
     else:
@@ -642,7 +705,7 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
     room_info : pd.DataFrame
         各家具配置パターンでの家具の情報が入ったdataframe
     """
-    #print(f'''FURNITURES : {furnitures}''')
+    print(f'''FURNITURES : {furnitures}''')
     furniture_list = [{"name":furniture.name, "width":furniture.width, "length":furniture.length, "rand_rotation":furniture.rand_rotation, "restriction":furniture.restriction} for furniture in furnitures]
     edges = [
         [0, 0],

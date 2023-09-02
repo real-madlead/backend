@@ -6,7 +6,7 @@ class Furniture(BaseModel):
     name: str = Field(example="sofa")
     width: float = Field(example=1.4)
     length: float = Field(example=0.5)
-    restriction: str | None = Field(example="alongwall")
+    restriction: list | None = Field(example=["alongwall"])
     rand_rotation: list = Field(example=[0, 90, 180]) 
     
 
