@@ -29,25 +29,21 @@ def generate_floor_plan(
         for i in range(furniture.quantity):
             #print(f'''APPEND FURNITURE : {furniture_list_all[furniture.id]}''')
             furniture_list.append(furniture_list_all[furniture.id])
-    # 部屋の縦横の長さ
-    #print("-----><-----")
-    floor_width = floor_info.floor.width
-    floor_length = floor_info.floor.length
-    #ランダムに家具の配置を作成
+    # ランダムに家具の配置を作成
     #print(f'''INPUT : {furniture_list}''')
-    generated_room = generate_room(room_width=floor_width, room_length=floor_length, furnitures=furniture_list, generate_num=10)
-    #AIによりベストな家具配置を見つける
+    generated_room = generate_room(floor_object=floor_info.floor, furniture_list=furniture_list, generate_num=10)
+    # AIによりベストな家具配置を見つける
     squeezed_room = generated_room.iloc[squeeze_room(generated_room)]
 
     furniture_position_list = []
-    #各家具の出現数を数えるための辞書
+    # 各家具の出現数を数えるための辞書
     name_counter = {}
     for furniture in furniture_list:
         if furniture.name not in name_counter:
             name_counter[furniture.name] = 1
         else:
             name_counter[furniture.name] += 1
-        #ベストな家具配置パターンの家具の位置を取得
+        # べストな家具配置パターンの家具の位置を取得
         x, y, rotation = get_position(furniture.name, name_counter, squeezed_room)
         furniture_postion = FurniturePlace(
             id = 0, #ダミーデータ

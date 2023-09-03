@@ -82,8 +82,8 @@ class Room():
                 line["color"] = "k"
             lines.append(line)
         for line in lines:
-            calculate_line = create_line(start=[line["x"][0], line["y"][0]], end=[line["x"][1], line["y"][1]], color=line["color"])
-            self.line_objects.append(calculate_line)
+            pseudogeometric_line_for_calculation = create_line(start=[line["x"][0], line["y"][0]], end=[line["x"][1], line["y"][1]], color=line["color"])
+            self.line_objects.append(pseudogeometric_line_for_calculation)
         
     def plot_furniture(self, furniture_places_list:list):
         """家具を配置するメソッド
@@ -157,7 +157,7 @@ class Room():
         for _ in range(max_attempts):
             restart = False  # ループを再開するかどうかをチェックするフラグ
             furnitureplace_objects_list = list()
-            for furniture_object in furniture_objects_list:
+            for furniture_object in sorted_furniture_objects_list:
                 counter = 0
                 while True:
                     if furniture_object.restriction=="alongwall":
@@ -210,8 +210,6 @@ def create_rectangle(center, width, height, angle, color):
     """四角形を作成する関数
     Returns
     -------
-    rectangle : matplotlib.patches.Rectangle
-        描画するための四角形のオブジェクト
     rectangle_polygon : shapely.geometry.polygon.Polygon
         あたり判定を計算するために仮想的に作成された四角形
     """
@@ -274,6 +272,22 @@ def sort_points(points):
     return sorted(points, key=lambda point: calculate_angle(point, center))
 
 def set_alongwall_dir_ctr(v_width, min_x, max_x, min_y, max_y, delta=0.01):
+    """家具が配置される際に壁沿い かつ 中心に向かう用に配置できる
+
+    Parameters
+    ---------
+    v_width : float
+        配置する家具の縦幅
+    min_x, max_x, min_y, max_y : int
+        部屋のx,y座標の最大値、最小値
+    delta : float
+        家具が壁と完全に接触してしまうとエラーが出るので、この数値だけ壁からずらす
+
+    Returns
+    ------
+    x, y, rotation : float, float, int
+        配置する家具のx, y座標と角度(度数法)
+    """
     rand = random.choice([0, 1, 2, 3])
     if rand == 0:
         x, y, rotation = random.uniform(min_x + v_width, max_x), min_y + delta, 90
@@ -286,6 +300,22 @@ def set_alongwall_dir_ctr(v_width, min_x, max_x, min_y, max_y, delta=0.01):
     return x, y, rotation
 
 def set_alongwall(min_x, max_x, min_y, max_y, rand_rotation, delta=0.01):
+    """家具が配置される際に壁沿い配置できる
+    
+    Parameters
+    ---------
+    min_x, max_x, min_y, max_y : int
+        部屋のx,y座標の最大値、最小値
+    rand_rotation : list[int]
+        配置される家具がランダムにとる角度（度数法）が入ったリスト
+    delta : float
+        家具が壁と完全に接触してしまうとエラーが出るので、この数値だけ壁からずらす
+
+    Returns
+    ------
+    x, y, rotation : float, float, int
+        配置する家具のx, y座標と角度(度数法)
+    """
     rand = random.choice([0, 1])
     rotation = random.choice(rand_rotation)
     if rand == 0:
@@ -295,12 +325,22 @@ def set_alongwall(min_x, max_x, min_y, max_y, rand_rotation, delta=0.01):
     return x, y, rotation
 
 def set_combo(v_width, h_width, min_x, max_x, min_y, max_y, set_furniture=None, delta=0.01):
-    """家具の配置の際に特定の家具とセットでおかれるようにする
+    """家具の配置の際に特定の家具とセットで配置できる
     Parameters
     ---------
-    - set_furniture : dict
-        セットでおく家具の情報が入った辞書オブジェクト
-    - rand_rotation : 一緒におく家具がない場合の解き様
+    v_width, h_width : float
+        配置する家具の縦幅、横幅
+    min_x, max_x, min_y, max_y : int
+        部屋のx,y座標の最大値、最小値
+    set_furniture : Furniture
+        セットでおく家具のFurnitureオブジェクト
+    delta : float
+        家具が壁と完全に接触してしまうとエラーが出るので、この数値だけ壁からずらす
+
+    Returns
+    ------
+    x, y, rotation : float, float, int
+        配置する家具のx, y座標と角度(度数法)
     """
     set_f_x, set_f_y, set_f_rotation = set_furniture.x + delta*math.sin(math.radians(set_furniture.rotation)), set_furniture.y - delta*math.cos(math.radians(set_furniture.rotation)), set_furniture.rotation
     rand = random.choice([0, 1, 2, 3]) 
@@ -327,7 +367,22 @@ def set_combo(v_width, h_width, min_x, max_x, min_y, max_y, set_furniture=None, 
     return x, y, rotation
 
 def set_facing(v_width, h_width, min_x, max_x, min_y, max_y, face_furniture, delta=0.01):
-    """家具配置の際に特定の家具と向かい合いになるように配置するための関数
+    """家具配置の際に特定の家具と向かい合いになるように配置できる
+    Parameters
+    ---------
+    v_width, h_width : float
+        配置する家具の縦幅、横幅
+    min_x, max_x, min_y, max_y : int
+        部屋のx,y座標の最大値、最小値
+    face_furniture : Furniture
+        向かい合って配置する家具のFurnitureオブジェクト
+    delta : float
+        家具が壁と完全に接触してしまうとエラーが出るので、この数値だけ壁からずらす
+
+    Returns
+    ------
+    x, y, rotation : float, float, int
+        配置する家具のx, y座標と角度(度数法)
     """
     face_rotation = face_furniture.rotation
     face_x, face_y, face_h, face_v = face_furniture.x, face_furniture.y, face_furniture.width, face_furniture.length
@@ -360,11 +415,6 @@ def multi_check_overlap(obj1, objs2:list):
             continue
     return False
    
-def find_max_values(arr):
-    max_val_1 = max(arr, key=lambda x: x[0])[0]
-    max_val_2 = max(arr, key=lambda x: x[1])[1]
-    return max_val_1, max_val_2
-   
 def calculate_distance(p1, p2):
     """2点の座標の距離を計算する関数
     Parameters
@@ -374,8 +424,8 @@ def calculate_distance(p1, p2):
     """
     return math.sqrt((p1["x"] - p2["x"])**2 + (p1["y"] - p2["y"])**2)
 
-def find_dict_by_name(dict_list, name, selfdict):
-    """家具同士の距離を算出したカラムを作成する際に使用した関数
+def get_furniture_distance(dict_list, name, selfdict):
+    """家具同士の距離を取得できる
 
     Parameters
     ---------
@@ -402,88 +452,15 @@ def find_dict_by_name(dict_list, name, selfdict):
             return distance
     return 0
 
-def get_values_from_dicts(key, list_of_dicts):
-    values = []
-    for dictionary in list_of_dicts:
-        if key in dictionary:
-            values.append(dictionary[key])
-    return values
 
-def make_random_furniture_prob_set(data_list, furniture_names):
-    """家具の辞書オブジェクトを作成する関数
-
-    Parameters
-    ---------
-    data_list : list
-        配置する家具の情報を辞書オブジェクトでいれたリスト
-    furniture_names : list
-        引数で渡された家具を複製して配置する家具の最大値
-
-    Returns
-    ------
-    data_list : list
-        元のdata_listのnameキーに番号と存在するかどうかを記したexistキーを追加したもの
-        {"name":ソファ_1, "width":1.4, "length":0.5, "rotation_range":[0, 90, 180], "restriction":["alongwall", "set"], "set_furniture":ベッド, "exist":1},
-        {...}
-    """
-    name_count = {}  # 各名前の出現回数を数えるための辞書
-    #print(f'''DATA LIST : {data_list}''')
-    for data in data_list:
-        name = data["name"]
-        if name not in name_count:
-            name_count[name] = 1
-        else:
-            name_count[name] += 1
-        data["name"] = f'''{name}_{name_count[name]}'''
-    for data in data_list:
-        data["exist"] = 1
-    #print(f'''DATA LIST : {data_list}''')
-    data_list_names = get_values_from_dicts("name", data_list)
-    for furniture_name in furniture_names:
-        if furniture_name not in data_list_names:
-            d = {"name":furniture_name, "exist":0}
-            data_list.append(d)
-    #print(f'''NAME COUNT : {name_count}''')
-
-    return data_list
-
-def rereformat_dataframe(df):
-    """データフレームを機械学習用の構造に変換する関数
-    """
-    #print(f'''DATAFRAME : {df}''')
-    new_df = pd.DataFrame()
-    room_num_unique_list = list(df["room"].unique())
-    all_column_list = df.columns.tolist()
-    remove_column_list = ["room", "room_h_length", "room_v_length", "target", "name"]
-    column_list = [x for x in all_column_list if x not in remove_column_list]
-    for room_num in room_num_unique_list:
-        df_split = df[df["room"] == room_num]
-        df_split = df_split.reset_index(drop=True)
-        room_h, room_v = df_split.at[0 ,"room_h_length"], df_split.at[0 ,"room_v_length"]
-        dic = {"room_num":room_num, "room_v":room_v, "room_h":room_h, "target":"uninspected"}
-        for index in range(len(df_split)):
-            df_split_one_line = df_split.iloc[index, :]
-            name = df_split_one_line["name"]
-            for column in column_list:
-                dic[f"""{name}_{column}"""] = df_split_one_line[column]
-            new_df_split_one_line = pd.DataFrame(dic, index=[0])
-        new_df = pd.concat([new_df, new_df_split_one_line], ignore_index=True)
-    return new_df
-        
-def generate_room(room_width:int, room_length:int, furnitures:list, generate_num:int, windows:list=None, doors:list=None):
+def generate_room(floor_object:Floor, furniture_list:list[Furniture], generate_num:int, windows:list=None, doors:list=None):
     """ランダムな家具配置の情報を生成する関数
     Parameters
     ---------
-    room_width : int
-        部屋の横幅
-    room_length : int
-        部屋の縦幅
-    furnitures : list
-        配置する家具の情報を辞書オブジェクトでいれたリスト
-        ex) furnitures = [
-            {"name":ソファ, "width":1.4, "length":0.5, "rotation_range":[0, 90, 180], "restriction":["alongwall", "set"], "set_furniture":ベッド},
-            {...}
-        ]
+    floor_object : Floor
+        schemas.pyにあるFloorオブジェクト
+    furniture_list : list[Furniture]
+        schemas.pyにあるFurnitureオブジェクトが複数入ったリスト
     generate_num : int
         何パターンの家具配置を出力するか
     windows : list
@@ -493,97 +470,7 @@ def generate_room(room_width:int, room_length:int, furnitures:list, generate_num
 
     Returns
     -------
-    room_info : pd.DataFrame
-        各家具配置パターンでの家具の情報が入ったdataframe
-    """
-    #print(f'''FURNITURES : {furnitures}''')
-    furniture_list = [{"name":furniture.name, "width":furniture.width, "length":furniture.length, "rand_rotation":furniture.rand_rotation, "restriction":furniture.restriction} for furniture in furnitures]
-    edges = [
-        [0, 0],
-        [0, room_length],
-        [room_width, room_length],
-        [room_width, 0]
-    ]
-    room_info = pd.DataFrame()
-    for I in range(generate_num):
-        room = Room(edges, windows=windows, doors=doors)
-        room.plot_room()
-        furniture_name_non_duplicated = ["bed", "desk", "chair","TV&Stand", "sofa", "light", "plant", "shelf", "chest"]
-        furniture_names = [f"{item}_{i}" for item in furniture_name_non_duplicated for i in range(1, 4)]#[sofa_1, sofa_2, ..]
-        column_names = ["room_num", "room_v", "room_h", "target"]
-        for furniture_name in furniture_names:
-            column_names.append(f'''{furniture_name}_exist''')
-            column_names.append(f'''{furniture_name}_v_width''')
-            column_names.append(f'''{furniture_name}_h_width''')
-            column_names.append(f'''{furniture_name}_x''')
-            column_names.append(f'''{furniture_name}_y''')
-            column_names.append(f'''{furniture_name}_rotation''')
-            for fur_name in furniture_names:
-                column_names.append(f'''{furniture_name}_d_{fur_name}''')
-                
-        #家具をランダムで複製
-        dummy_furniture_list = copy.deepcopy(furniture_list)
-        new_random_furniture = make_random_furniture_prob_set(dummy_furniture_list, furniture_names)#dictにexistキーを追加しなきゃいけない
-        #print(f'''ALL FURNITURE : {new_random_furniture}''')
-        furniture_info_list = room.random_plot_furniture(random_furniture=new_random_furniture)
-        #print(f'''FURNITURE INFO list: {furniture_info_list}''')
-        print("------------------------")
-        for i in furniture_info_list:
-            print(f'''COLUMN:{i}''')
-        #各家具の相対的な距離を算出したカラムを追加        
-        for i in furniture_info_list:
-            for furniture_name in furniture_names:
-                if i['exist'] == 0:
-                    i[f'd_{furniture_name}'] = 0
-                elif i["name"]!=furniture_name:
-                    distance = find_dict_by_name(furniture_info_list, furniture_name, i)
-                    i[f"""d_{furniture_name}"""] = distance
-                else:
-                    i[f'd_{furniture_name}'] = 0
-        #print(f'''FURNITURE INFO 1: {furniture_info_list[0]}''')
-        #print(f'''FURNITURE INFO 2: {furniture_info_list[1]}''')
-        #print(f'''furnniutre{furniture_info_list}''')
-        for furniture_info in furniture_info_list:
-            df = pd.DataFrame(furniture_info, index=[0])
-            df["room"] = f"""room_{str(I)}"""# dataframeに生成されたランダムな部屋配置の番号を追加
-            #部屋の縦横に関してのカラムを追加
-            df["room_h_length"] = room_width
-            df["room_v_length"] = room_length
-            room_info = pd.concat([room_info, df])
-    room_info["target"] = "uninspected"
-    room_info = rereformat_dataframe(room_info)
-    room_info = room_info[column_names]
-    for column in list(room_info.columns):
-        print(f"column{column}")
-    #print(f"room_info{room_info}")
-    #print(room_info.columns)
-    return room_info
-
-
-def generate_room2(floor_object:Floor, furniture_list:list[Furniture], generate_num:int, windows:list=None, doors:list=None):
-    """ランダムな家具配置の情報を生成する関数
-    Parameters
-    ---------
-    room_width : int
-        部屋の横幅
-    room_length : int
-        部屋の縦幅
-    furnitures : list
-        配置する家具の情報を辞書オブジェクトでいれたリスト
-        ex) furnitures = [
-            {"name":ソファ, "width":1.4, "length":0.5, "rotation_range":[0, 90, 180], "restriction":["alongwall", "set"], "set_furniture":ベッド},
-            {...}
-        ]
-    generate_num : int
-        何パターンの家具配置を出力するか
-    windows : list
-        部屋の窓の端を示したもの(詳しくはRoomクラスの説明で)
-    doors : list
-        部屋のドアの端を示したもの(詳しくはRoomクラスの説明で)
-
-    Returns
-    -------
-    room_info : pd.DataFrame
+    rooms_furniture_placement_df : pd.DataFrame
         各家具配置パターンでの家具の情報が入ったdataframe
     """
     #print(f'''FURNITURES : {furnitures}''')
@@ -599,48 +486,71 @@ def generate_room2(floor_object:Floor, furniture_list:list[Furniture], generate_
         room.plot_room()
         furnitureplace_list = room.place_furnitures_with_restriction(furniture_objects_list=furniture_list)
         rooms_furniture_placement_list.append(furnitureplace_list)
-    rooms_furniture_placement_df = convert_furniture_list_to_dataframe(rooms_furniture_placement_list)
+    rooms_furniture_placement_df = convert_furniture_list_to_dataframe(rooms_furniture_placement_list, floor_object=floor_object)
     return rooms_furniture_placement_df        
-        print("------------------------")
-        for i in furniture_info_list:
-            print(f'''COLUMN:{i}''')
-        #各家具の相対的な距離を算出したカラムを追加        
-        for i in furniture_info_list:
-            for furniture_name in furniture_names:
-                if i['exist'] == 0:
-                    i[f'd_{furniture_name}'] = 0
-                elif i["name"]!=furniture_name:
-                    distance = find_dict_by_name(furniture_info_list, furniture_name, i)
-                    i[f"""d_{furniture_name}"""] = distance
-                else:
-                    i[f'd_{furniture_name}'] = 0
-        #print(f'''FURNITURE INFO 1: {furniture_info_list[0]}''')
-        #print(f'''FURNITURE INFO 2: {furniture_info_list[1]}''')
-        #print(f'''furnniutre{furniture_info_list}''')
-        for furniture_info in furniture_info_list:
-            df = pd.DataFrame(furniture_info, index=[0])
-            df["room"] = f"""room_{str(I)}"""# dataframeに生成されたランダムな部屋配置の番号を追加
-            #部屋の縦横に関してのカラムを追加
-            df["room_h_length"] = room_width
-            df["room_v_length"] = room_length
-            room_info = pd.concat([room_info, df])
-    room_info["target"] = "uninspected"
-    room_info = rereformat_dataframe(room_info)
-    room_info = room_info[column_names]
-    for column in list(room_info.columns):
-        print(f"column{column}")
-    #print(f"room_info{room_info}")
-    #print(room_info.columns)
-    return room_info
 
-def convert_furniture_list_to_dataframe(furnitureplace_object_list):
+def convert_furniture_list_to_dataframe(rooms_furniture_placement_list:list[list[FurniturePlace]], floor_object:Floor):
     """furnitureplaceオブジェクトが格納されているリストからAIの機会学習用dataframeへの変換
+
+    Parameters
+    ---------
+    rooms_furniture_placement_list : list[list[FurniturePlace]]
+        家具と家具の配置の情報であるFurniturePlaceオブジェクトが複数入ったリスト ->（一つの部屋の家具情報）が複数格納されているリスト -> (複数の部屋の情報が格納されているリスト)
+    floor_object : Floor
+        schemas.pyにあるFloorオブジェクト
+
+    Returns
+    ------
+    rooms_furniture_placement_df : pd.DataFrame
+        AIのデータ用にフォーマットしたDataFrame
     """
     rooms_furniture_placement_df = pd.DataFrame()
-    
-
-
-    return 
+    for index, furniture_placement_list in enumerate(rooms_furniture_placement_list):
+        each_furniture_count_dict = dict()
+        for item in furniture_list_all:
+            each_furniture_count_dict[item.name] = furniture_placement_list.count(item)
+        furniture_placement_dict = {'room_num':f'room_{index}', 'room_v':floor_object.length, 'room_h':floor_object.width, 'target':'uninspected'}
+        dummy_dict_list = list()
+        for furniture in furniture_list_all:
+            specific_furniture_placements_list = [furniture_placement for furniture_placement in furniture_placement_list if furniture_placement.name==furniture.name]
+            for i in range(len(specific_furniture_placements_list)):
+                dummy_dict = dict()
+                dummy_dict['name']=f'{furniture.name}_{i+1}'
+                dummy_dict['x']=specific_furniture_placements_list[i].x
+                dummy_dict['y']=specific_furniture_placements_list[i].y
+                dummy_dict['rotation']=specific_furniture_placements_list[i].rotation
+                dummy_dict['width']=specific_furniture_placements_list[i].width
+                dummy_dict['length']=specific_furniture_placements_list[i].length
+                dummy_dict_list.append(dummy_dict)
+        only_name_list = [dic['name'] for dic in dummy_dict_list]
+        for furniture in furniture_list_all:
+            for i in range(3):
+                if f'{furniture.name}_{i+1}' in only_name_list:
+                    furniture_placement_dict[f'{furniture.name}_{i+1}_exist']=1
+                    furniture_placement_dict[f'{furniture.name}_{i+1}_v_width']=next((d['length'] for d in dummy_dict_list if d['name'] == f'{furniture.name}_{i+1}'), None)
+                    furniture_placement_dict[f'{furniture.name}_{i+1}_h_width']=next((d['width'] for d in dummy_dict_list if d['name'] == f'{furniture.name}_{i+1}'), None)
+                    furniture_placement_dict[f'{furniture.name}_{i+1}_x']=next((d['x'] for d in dummy_dict_list if d['name'] == f'{furniture.name}_{i+1}'), None)
+                    furniture_placement_dict[f'{furniture.name}_{i+1}_y']=next((d['y'] for d in dummy_dict_list if d['name'] == f'{furniture.name}_{i+1}'), None)
+                    furniture_placement_dict[f'{furniture.name}_{i+1}_rotation']=next((d['rotation'] for d in dummy_dict_list if d['name'] == f'{furniture.name}_{i+1}'), None)
+                    for fur in furniture_list_all:
+                        for i_2 in range(3):
+                            furniture_placement_dict[f'{furniture.name}_{i+1}_d_{fur.name}_{i_2+1}']=get_furniture_distance(dict_list=dummy_dict_list, 
+                                                                                                                       name=f'{fur.name}_{i_2+1}', 
+                                                                                                                       selfdict=next((d for d in dummy_dict_list if d['name'] == f'{furniture.name}_{i+1}'), None))
+                elif f'{furniture.name}_{i+1}' not in only_name_list:
+                    furniture_placement_dict[f'{furniture.name}_{i+1}_exist']=0
+                    furniture_placement_dict[f'{furniture.name}_{i+1}_v_width']=0
+                    furniture_placement_dict[f'{furniture.name}_{i+1}_h_width']=0
+                    furniture_placement_dict[f'{furniture.name}_{i+1}_x']=0
+                    furniture_placement_dict[f'{furniture.name}_{i+1}_y']=0
+                    furniture_placement_dict[f'{furniture.name}_{i+1}_rotation']=0
+                    for fur in furniture_list_all:
+                        for i_2 in range(3):
+                            furniture_placement_dict[f'{furniture.name}_{i+1}_d_{fur.name}_{i_2+1}']=0   
+        furniture_placement_df = pd.DataFrame(furniture_placement_dict, index=[0])
+        rooms_furniture_placement_df = pd.concat([rooms_furniture_placement_df, furniture_placement_df], ignore_index=True)
+                      
+    return rooms_furniture_placement_df
 
 class Net(nn.Module):
     def __init__(self, n_features):
