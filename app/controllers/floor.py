@@ -39,6 +39,30 @@ def generate_floor_plan(
     #AIによりベストな家具配置を見つける
     best_arranged_index, best_arranged_score = squeeze_room(generated_room)
     squeezed_room = generated_room.iloc[best_arranged_index]
+
+
+    furniture_position_list = []
+    # 各家具の出現数を数えるための辞書
+    name_counter = {}
+    for furniture in furniture_list:
+        if furniture.name not in name_counter:
+            name_counter[furniture.name] = 1
+        else:
+            name_counter[furniture.name] += 1
+        # べストな家具配置パターンの家具の位置を取得
+        x, y, rotation = get_position(furniture.name, name_counter, squeezed_room)
+        furniture_postion = FurniturePlace(
+            id = 0, #ダミーデータ
+            name=furniture.name,
+            width=furniture.width,
+            length=furniture.length,
+            x=x,
+            y=y,
+            rotation=rotation,
+            restriction = "",
+            rand_rotation = [0]
+        )
+        furniture_position_list.append(furniture_postion)
     
     return FloorPlanOutputSchema(floor=floor_info.floor, furnitures=furniture_position_list, scoring_of_room_layout_using_AI=best_arranged_score)
 
