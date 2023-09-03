@@ -588,6 +588,7 @@ def get_high_score_indices(model_path, test_df):
     print(f'max_index: {max_index}')
     return max_index, max_score
 
+
 def squeeze_room(df):
     """AIによる絞り込み(未実装)
     Parameters
@@ -608,19 +609,6 @@ def squeeze_room(df):
     index, score = get_high_score_indices(model_path, df_test)
     
     return index, score
-
-def predict(model_path, df):
-    # データフレームをテストデータに変換
-    X_test = torch.tensor(df.values, dtype=torch.float32)
-
-    # 保存したモデルを読み込む
-    model = Net(X_test.shape[1])  # モデルのインスタンスを作成
-    model.load_state_dict(torch.load(model_path))  # 保存したモデルのパラメータを読み込む
-    model.eval()  # モデルを評価モードに設定
-
-    # X_testデータを使って予測を行う
-    with torch.no_grad():
-        predictions = model(X_test)
 
 
 def get_position(name:str, name_counter:dict, series):
@@ -661,7 +649,7 @@ def recommend_furniture_using_AI(
     ------
     recommend_furnitureplace : FurniturePlace
         AIが最適だと考えた家具の配置
-    score : float
+    best_score : float
         おすすめの家具を配置した場合の部屋のスコア 
     """
     edges = [
@@ -675,12 +663,23 @@ def recommend_furniture_using_AI(
     furnitures_list = current_floor_plan_output_schema.furnitures
     _ = room.plot_furniture(furniture_places_list=furnitures_list)
     while True:
+        copy_current_room = copy.deepcopy(room)
+        candidate_furnitureplace_list = list()# この中に候補のFurniturePlaceオブジェクトが格納される
+        candidate_room_furnitureplace_list = list()
         for candidate_furniture in candidate_furnitures_for_additional_placement:
-            additinal_furnitre_placement_list = room.place_furnitures_with_restriction(furniture_objects_list=[candidate_furniture])
-            current_floor_plan_output_schema.furnitures.append(additinal_furnitre_placement_list)
-            scored_df = convert_furniture_list_to_dataframe(rooms_furniture_placement_list=[current_floor_plan_output_schema.furnitures], floor_object=current_floor_plan_output_schema.floor)
-            #　AIによる採点
-            score = predict(model_path='./AI_model/torch_model.pth', df=scored_df)
-            print(score)
-            if current_floor_plan_output_schema.scoring_of_room_layout_using_AI <= score:
-                return recommend_furnitureplace, score
+            additinal_furnitre_placement_list = copy_current_room.place_furnitures_with_restriction(furniture_objects_list=[candidate_furniture])
+            candidate_furnitureplace_list.append(additinal_furnitre_placement_list)
+            current_floor_plan_output_schema.furnitures += additinal_furnitre_placement_list
+            candidate_room_furnitureplace_list.append(current_floor_plan_output_schema.furnitures)
+            
+        test_df = convert_furniture_list_to_dataframe(rooms_furniture_placement_list=candidate_room_furnitureplace_list, floor_object=current_floor_plan_output_schema.floor)
+        
+        #　AIによる採点
+        test_df = test_df.drop(['room_num', 'target'], axis=1)
+        best_index, best_score = get_high_score_indices(model_path='./AI_model/torch_model.pth', df=test_df)
+        print(best_score)
+        print(best_index)
+        if current_floor_plan_output_schema.scoring_of_room_layout_using_AI <= best_score:
+            recommend_furnitureplace = candidate_furnitureplace_list[best_index]
+            return recommend_furnitureplace, best_score
+        

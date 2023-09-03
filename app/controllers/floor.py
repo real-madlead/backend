@@ -23,24 +23,19 @@ def generate_floor_plan(
     """
     # 配置する家具のリスト{name, width, length}
     furniture_list = []
-    
+    print('start')
     #print(f'''FLOOR INFO FURNITURES : {floor_info.furnitures}''')
     for furniture in floor_info.furnitures:
         for i in range(furniture.quantity):
             #print(f'''APPEND FURNITURE : {furniture_list_all[furniture.id]}''')
             furniture_list.append(furniture_list_all[furniture.id])
-    # 部屋の縦横の長さ
-    #print("-----><-----")
-    floor_width = floor_info.floor.width
-    floor_length = floor_info.floor.length
-    #ランダムに家具の配置を作成
+    # ランダムに家具の配置を作成
     #print(f'''INPUT : {furniture_list}''')
-    generated_room = generate_room(floor_object==floor_width, room_length=floor_length, furnitures=furniture_list, generate_num=10)
+    generated_room = generate_room(floor_object=floor_info.floor, furniture_list=furniture_list, generate_num=10)
     #AIによりベストな家具配置を見つける
     best_arranged_index, best_arranged_score = squeeze_room(generated_room)
     squeezed_room = generated_room.iloc[best_arranged_index]
 
-loor_object:Floor, furniture_list:list[Furniture], generate_num:int, windows:list=None, doors:list=None
     furniture_position_list = []
     # 各家具の出現数を数えるための辞書
     name_counter = {}
