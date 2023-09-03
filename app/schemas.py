@@ -37,4 +37,4 @@ class FloorPlanInputSchema(BaseModel):
 class FloorPlanOutputSchema(BaseModel):
     floor: Floor
     furnitures: list[FurniturePlace]
-    scoring_of_room_layout_using_AI: float
+    scoring_of_room_layout_using_AI: float = Field(example=20.5)

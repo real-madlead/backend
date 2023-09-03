@@ -35,12 +35,12 @@ def generate_floor_plan(
     floor_length = floor_info.floor.length
     #ランダムに家具の配置を作成
     #print(f'''INPUT : {furniture_list}''')
-    generated_room = generate_room(room_width=floor_width, room_length=floor_length, furnitures=furniture_list, generate_num=10)
+    generated_room = generate_room(floor_object==floor_width, room_length=floor_length, furnitures=furniture_list, generate_num=10)
     #AIによりベストな家具配置を見つける
     best_arranged_index, best_arranged_score = squeeze_room(generated_room)
     squeezed_room = generated_room.iloc[best_arranged_index]
 
-
+loor_object:Floor, furniture_list:list[Furniture], generate_num:int, windows:list=None, doors:list=None
     furniture_position_list = []
     # 各家具の出現数を数えるための辞書
     name_counter = {}

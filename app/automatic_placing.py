@@ -609,7 +609,18 @@ def squeeze_room(df):
     
     return index, score
 
-def predict(model_path, df)
+def predict(model_path, df):
+    # データフレームをテストデータに変換
+    X_test = torch.tensor(df.values, dtype=torch.float32)
+
+    # 保存したモデルを読み込む
+    model = Net(X_test.shape[1])  # モデルのインスタンスを作成
+    model.load_state_dict(torch.load(model_path))  # 保存したモデルのパラメータを読み込む
+    model.eval()  # モデルを評価モードに設定
+
+    # X_testデータを使って予測を行う
+    with torch.no_grad():
+        predictions = model(X_test)
 
 
 def get_position(name:str, name_counter:dict, series):
@@ -633,16 +644,15 @@ def get_position(name:str, name_counter:dict, series):
     return x, y, rotation
 
 def recommend_furniture_using_AI(
-        candidate_furnitures_for_additional_placement,
-        current_furniture_layout,
-        current_best_score
+        candidate_furnitures_for_additional_placement:list[Furniture],
+        current_floor_plan_output_schema:FloorPlanOutputSchema,
                                  ):
     """AIにより渡された部屋に新たな家具を配置するようにおすすめする
     Parameters
     ---------
-    candidate_furnitures_for_additional_placement : list(FURNITURE)
+    candidate_furnitures_for_additional_placement : list[Furniture]
         追加で配置する家具の候補
-    current_furniture_layout : FloorPlanOutputSchema
+    current_floor_plan_output_schena : FloorPlanOutputSchema
         現在の家具配置
     current_score : flaot
         現在の最高スコア
@@ -656,22 +666,21 @@ def recommend_furniture_using_AI(
     """
     edges = [
         [0, 0],
-        [0, current_furniture_layout.floor.length],
-        [current_furniture_layout.floor.width, current_furniture_layout.floor.length],
-        [current_furniture_layout.floor.width, 0]
+        [0, current_floor_plan_output_schema.floor.length],
+        [current_floor_plan_output_schema.floor.width, current_floor_plan_output_schema.floor.length],
+        [current_floor_plan_output_schema.floor.width, 0]
     ]
     room = Room(edges=edges)
     room.plot_room()
-    furnitures_list = [Furniture(v_width=furnitureplace.length, h_width=furnitureplace.width, rotation=furnitureplace.rotation, name=furnitureplace.name) for furnitureplace in current_furniture_layout.furnitures]
-    furnitures_coord_list = [[furniture_coord.x, furniture_coord.y] for furniture_coord in current_furniture_layout.furnitures]
-    _ = room.plot_furniture(furnitrues=furnitures_list, furnitures_coord=furnitures_coord_list)
+    furnitures_list = current_floor_plan_output_schema.furnitures
+    _ = room.plot_furniture(furniture_places_list=furnitures_list)
     while True:
         for candidate_furniture in candidate_furnitures_for_additional_placement:
-            new_placement_furniture = [Furniture(v_width=candidate_furniture.length, h_width=candidate_furniture.width, rotation)]
-            e_flag =  room.plot_furniture()
-            if e_flag[0]== :
-                continue
-            #AIによる採点
-            if current_best_score <= score:
+            additinal_furnitre_placement_list = room.place_furnitures_with_restriction(furniture_objects_list=[candidate_furniture])
+            current_floor_plan_output_schema.furnitures.append(additinal_furnitre_placement_list)
+            scored_df = convert_furniture_list_to_dataframe(rooms_furniture_placement_list=[current_floor_plan_output_schema.furnitures], floor_object=current_floor_plan_output_schema.floor)
+            #　AIによる採点
+            score = predict(model_path='./AI_model/torch_model.pth', df=scored_df)
+            print(score)
+            if current_floor_plan_output_schema.scoring_of_room_layout_using_AI <= score:
                 return recommend_furnitureplace, score
-
