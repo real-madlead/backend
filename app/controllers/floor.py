@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from app.schemas import FloorPlanInputSchema, FloorPlanOutputSchema, FurniturePlace, Furniture
 from app.furniture_data import furniture_list_all
 from app.automatic_placing import generate_room, squeeze_room, get_position
+from app.color_selecting import set_optimized_color_each_furniture
 router = APIRouter()
 
 # 家具のリストを受け取り、床の上に配置した家具のリストを返す
@@ -36,6 +37,7 @@ def generate_floor_plan(
     best_arranged_index, best_arranged_score = squeeze_room(generated_room)
     squeezed_room = generated_room.iloc[best_arranged_index]
 
+
     furniture_position_list = []
     # 各家具の出現数を数えるための辞書
     name_counter = {}
@@ -55,11 +57,14 @@ def generate_floor_plan(
             y=y,
             rotation=rotation,
             restriction = "",
-            rand_rotation = [0]
+            rand_rotation = [0],
+            color_map_path = ''
         )
         furniture_position_list.append(furniture_postion)
+        
+    new_furniture_position_list = set_optimized_color_each_furniture(furniture_position_list, floor_info.floor)
     
-    return FloorPlanOutputSchema(floor=floor_info.floor, furnitures=furniture_position_list, scoring_of_room_layout_using_AI=best_arranged_score)
+    return FloorPlanOutputSchema(floor=floor_info.floor, furnitures=new_furniture_position_list, scoring_of_room_layout_using_AI=best_arranged_score)
 
 # 家具のリストを取得
 @router.get("/floor/furnitures")

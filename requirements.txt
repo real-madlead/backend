@@ -9,3 +9,6 @@ pillow==9.5.0
 six==1.16.0
 importlib-resources
 zipp
+langchain
+python-dotenv
+openai

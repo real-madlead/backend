@@ -187,7 +187,8 @@ class Room():
                         rand_rotation = furniture_object.rand_rotation,
                         x = x,
                         y = y,
-                        rotation = rotation
+                        rotation = rotation,
+                        color_map_path = ""
                     )
                     error_flag = self.plot_furniture([furnitureplace_object])
                     if error_flag[0]!=0:

@@ -8,6 +8,7 @@ class Furniture(BaseModel):
     length: float = Field(example=0.5)
     restriction: str | None = Field(example="alongwall")
     rand_rotation: list = Field(example=[0, 90, 180]) 
+    color_map_path: str = Field(example='/materials/texture/desk/CC01CC.jpg')
     
 
 # 家具の位置　家具を継承
