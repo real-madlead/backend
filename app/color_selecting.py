@@ -33,6 +33,29 @@ def get_similar_color(hex_color, hue_shift=0.1):
 def get_complementary_color(hex_color):
     return get_similar_color(hex_color, 0.5)
 
+def color_distance(color1, color2):
+    """Calculate distance between two colors in HSV space."""
+    h1, s1, v1 = colorsys.rgb_to_hsv(*color1)
+    h2, s2, v2 = colorsys.rgb_to_hsv(*color2)
+    dh = min(abs(h1-h2), 1-abs(h1-h2)) * 2
+    ds = abs(s1-s2)
+    dv = abs(v1-v2) / 255.0
+    return dh*dh + ds*ds + dv*dv
+
+def closest_color(ref_color, colors):
+    """Find the closest color from a list."""
+    ref_color_rgb = hex_to_rgb(ref_color)
+    min_colors = None
+    min_distance = float('inf')
+    
+    for color in colors:
+        color_rgb = hex_to_rgb(color)
+        distance = color_distance(ref_color_rgb, color_rgb)
+        if distance < min_distance:
+            min_distance = distance
+            min_colors = color
+            
+    return min_colors
 
 def set_optimized_color_each_furniture(furnitureplace_list: list[FurniturePlace], floor: Floor):
     """各家具に最適な色を与える
@@ -95,7 +118,7 @@ def distribute_furnitures(furnitureplace_list:list[FurniturePlace], room_area:fl
 
 
 
-def get_color_pairs_from_text(text='温かみがあり、おしゃれな部屋がいい'):
+def get_color_pairs_from_text(text='水色が中心のお部屋がいい'):
     """テキストから色の組み合わせ3色を取得
     Parameters
     ---------
@@ -133,7 +156,7 @@ def get_color_pairs_from_text(text='温かみがあり、おしゃれな部屋�
     #0166FF
     #00CCCB
     #01CC34
-    #97CA00
+    #97CA00 
     #FFFF01
     #FF6600
     #CC0001
