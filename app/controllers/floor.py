@@ -1,7 +1,8 @@
 from fastapi import APIRouter
 from app.schemas import FloorPlanInputSchema, FloorPlanOutputSchema, FurniturePlace, Furniture
 from app.furniture_data import furniture_list_all
-from app.automatic_placing import generate_room, squeeze_room, get_position
+from app.automatic_placing import generate_room, squeeze_room, get_position, recommend_furniture_using_AI
+from app.color_selecting import set_optimized_color_each_furniture
 router = APIRouter()
 
 # 家具のリストを受け取り、床の上に配置した家具のリストを返す
@@ -29,25 +30,23 @@ def generate_floor_plan(
         for i in range(furniture.quantity):
             #print(f'''APPEND FURNITURE : {furniture_list_all[furniture.id]}''')
             furniture_list.append(furniture_list_all[furniture.id])
-    # 部屋の縦横の長さ
-    #print("-----><-----")
-    floor_width = floor_info.floor.width
-    floor_length = floor_info.floor.length
-    #ランダムに家具の配置を作成
+    # ランダムに家具の配置を作成
     #print(f'''INPUT : {furniture_list}''')
-    generated_room = generate_room(room_width=floor_width, room_length=floor_length, furnitures=furniture_list, generate_num=10)
+    generated_room = generate_room(floor_object=floor_info.floor, furniture_list=furniture_list, generate_num=10)
     #AIによりベストな家具配置を見つける
-    squeezed_room = generated_room.iloc[squeeze_room(generated_room)]
+    best_arranged_index, best_arranged_score = squeeze_room(generated_room)
+    squeezed_room = generated_room.iloc[best_arranged_index]
+
 
     furniture_position_list = []
-    #各家具の出現数を数えるための辞書
+    # 各家具の出現数を数えるための辞書
     name_counter = {}
     for furniture in furniture_list:
         if furniture.name not in name_counter:
             name_counter[furniture.name] = 1
         else:
             name_counter[furniture.name] += 1
-        #ベストな家具配置パターンの家具の位置を取得
+        # べストな家具配置パターンの家具の位置を取得
         x, y, rotation = get_position(furniture.name, name_counter, squeezed_room)
         furniture_postion = FurniturePlace(
             id = 0, #ダミーデータ
@@ -58,11 +57,14 @@ def generate_floor_plan(
             y=y,
             rotation=rotation,
             restriction = "",
-            rand_rotation = [0]
+            rand_rotation = [0],
+            color_map_path = ''
         )
         furniture_position_list.append(furniture_postion)
+
+    new_furniture_position_list = set_optimized_color_each_furniture(furniture_position_list, floor_info.floor)
     
-    return FloorPlanOutputSchema(floor=floor_info.floor, furnitures=furniture_position_list)
+    return FloorPlanOutputSchema(floor=floor_info.floor, furnitures=new_furniture_position_list, scoring_of_room_layout_using_AI=best_arranged_score)
 
 # 家具のリストを取得
 @router.get("/floor/furnitures")
@@ -73,3 +75,22 @@ def get_furnitures() -> list[Furniture]:
     [id, name, width, length]をカラムに持つオブジェクトが複数個入った配列が返ってくる
     """
     return furniture_list_all
+
+@router.post('/floor/recommendation')
+def recommend_furniture(
+    room_info: FloorPlanOutputSchema,
+    candidate_furnitures: list[Furniture]
+) -> FurniturePlace:
+    """
+    ### AI提案機能用のAPI
+    #### リクエスト
+    - ***room_info***: AI提案前の部屋情報（FloorPlanOutputSchema）
+    - ***candidate_furnitures***: AIが選ぶ家具の候補（list[Furniture]）
+
+    #### レスポンス
+    - ***recommend_furnitureplace***: 配置情報も含んだAI提案家具（FurniturePlace）
+    """
+    recommend_furnitureplace, score_for_placing_recommended_furniture = recommend_furniture_using_AI(candidate_furnitures, room_info)
+    return recommend_furnitureplace
+     
+    

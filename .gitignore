@@ -4,3 +4,4 @@ app/controllers/__pycache__/
 .venv/
 .idea/
 .python-version
+*.log

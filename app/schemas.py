@@ -3,23 +3,25 @@ from pydantic import BaseModel, Field
 # 家具
 class Furniture(BaseModel):
     id: int = Field(example=0)
-    name: str = Field(example="sofa")
-    width: float = Field(example=1.4)
-    length: float = Field(example=0.5)
+    name: str = Field(example="bed")
+    width: float = Field(example=1.95)
+    length: float = Field(example=1.0)
     restriction: str | None = Field(example="alongwall")
-    rand_rotation: list = Field(example=[0, 90, 180]) 
+    rand_rotation: list = Field(example=[0, 90, 180, 270]) 
+    color_map_path: str = Field(example='')
     
 
 # 家具の位置　家具を継承
 class FurniturePlace(Furniture):
-    x: float = Field(example=0)
-    y: float = Field(example=0)
+    x: float = Field(example=2)
+    y: float = Field(example=2)
     rotation: float = Field(example=0)
+    
 
 # 床
 class Floor(BaseModel):
-    width: float = Field(example=5)
-    length: float = Field(example=5)
+    width: float = Field(example=7)
+    length: float = Field(example=7)
 
 class FurnitureInput(BaseModel):
     id: int = Field(example=0)
@@ -36,3 +38,4 @@ class FloorPlanInputSchema(BaseModel):
 class FloorPlanOutputSchema(BaseModel):
     floor: Floor
     furnitures: list[FurniturePlace]
+    scoring_of_room_layout_using_AI: float = Field(example=0.5)
