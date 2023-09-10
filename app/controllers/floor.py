@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from app.schemas import FloorPlanInputSchema, FloorPlanOutputSchema, FurniturePlace, Furniture
 from app.furniture_data import furniture_list_all
-from app.automatic_placing import generate_room, squeeze_room, get_position
+from app.automatic_placing import generate_room, squeeze_room, get_position, recommend_furniture_using_AI
 from app.color_selecting import set_optimized_color_each_furniture
 router = APIRouter()
 
@@ -61,7 +61,7 @@ def generate_floor_plan(
             color_map_path = ''
         )
         furniture_position_list.append(furniture_postion)
-        
+
     new_furniture_position_list = set_optimized_color_each_furniture(furniture_position_list, floor_info.floor)
     
     return FloorPlanOutputSchema(floor=floor_info.floor, furnitures=new_furniture_position_list, scoring_of_room_layout_using_AI=best_arranged_score)
@@ -75,3 +75,22 @@ def get_furnitures() -> list[Furniture]:
     [id, name, width, length]をカラムに持つオブジェクトが複数個入った配列が返ってくる
     """
     return furniture_list_all
+
+@router.post('/floor/recommendation')
+def recommend_furniture(
+    room_info: FloorPlanOutputSchema,
+    candidate_furnitures: list[Furniture]
+) -> FurniturePlace:
+    """
+    ### AI提案機能用のAPI
+    #### リクエスト
+    - ***room_info***: AI提案前の部屋情報（FloorPlanOutputSchema）
+    - ***candidate_furnitures***: AIが選ぶ家具の候補（list[Furniture]）
+
+    #### レスポンス
+    - ***recommend_furnitureplace***: 配置情報も含んだAI提案家具（FurniturePlace）
+    """
+    recommend_furnitureplace, score_for_placing_recommended_furniture = recommend_furniture_using_AI(candidate_furnitures, room_info)
+    return recommend_furnitureplace
+     
+    

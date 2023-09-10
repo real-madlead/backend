@@ -670,6 +670,7 @@ def recommend_furniture_using_AI(
         for candidate_furniture in candidate_furnitures_for_additional_placement:
             additinal_furnitre_placement_list = copy_current_room.place_furnitures_with_restriction(furniture_objects_list=[candidate_furniture])
             candidate_furnitureplace_list.append(additinal_furnitre_placement_list)
+
             current_floor_plan_output_schema.furnitures += additinal_furnitre_placement_list
             candidate_room_furnitureplace_list.append(current_floor_plan_output_schema.furnitures)
             
@@ -677,10 +678,8 @@ def recommend_furniture_using_AI(
         
         #　AIによる採点
         test_df = test_df.drop(['room_num', 'target'], axis=1)
-        best_index, best_score = get_high_score_indices(model_path='./AI_model/torch_model.pth', df=test_df)
-        print(best_score)
-        print(best_index)
+        best_index, best_score = get_high_score_indices(model_path='./AI_model/torch_model.pth', test_df=test_df)
         if current_floor_plan_output_schema.scoring_of_room_layout_using_AI <= best_score:
             recommend_furnitureplace = candidate_furnitureplace_list[best_index]
-            return recommend_furnitureplace, best_score
+            return recommend_furnitureplace[0], best_score
         
