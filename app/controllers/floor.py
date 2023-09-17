@@ -67,7 +67,7 @@ def generate_floor_plan(
     return FloorPlanOutputSchema(floor=floor_info.floor, furnitures=furniture_position_list, scoring_of_room_layout_using_AI=best_arranged_score)
 
 # 家具のリストを取得
-@router.get("/floor/set_color")
+@router.post("/floor/set_color")
 def set_furniture_color(
     floor_plan_output_schema: FloorPlanOutputSchema,
     input_text: str = Query(
