@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from app.schemas import FloorPlanInputSchema, FloorPlanOutputSchema, FurniturePlace, Furniture
 from app.furniture_data import furniture_list_all
 from app.automatic_placing import generate_room, squeeze_room, get_position, recommend_furniture_using_AI
@@ -62,9 +62,32 @@ def generate_floor_plan(
         )
         furniture_position_list.append(furniture_postion)
 
-    new_furniture_position_list = set_optimized_color_each_furniture(furniture_position_list, floor_info.floor)
+    #new_furniture_position_list = set_optimized_color_each_furniture(furniture_position_list, floor_info.floor)
     
-    return FloorPlanOutputSchema(floor=floor_info.floor, furnitures=new_furniture_position_list, scoring_of_room_layout_using_AI=best_arranged_score)
+    return FloorPlanOutputSchema(floor=floor_info.floor, furnitures=furniture_position_list, scoring_of_room_layout_using_AI=best_arranged_score)
+
+# 家具のリストを取得
+@router.get("/floor/set_color")
+def set_furniture_color(
+    floor_plan_output_schema: FloorPlanOutputSchema,
+    input_text: str = Query(
+        description="部屋の雰囲気を説明したテキスト",
+        example="温かみのある雰囲気の部屋にしたい。"
+    )
+) -> FloorPlanOutputSchema:
+    """
+    ### 間取り生成用のAPI
+    #### リクエスト
+    - ***floor***: 床面積の情報
+    - ***furnitures***: 家具のリスト (家具の位置情報を含む)
+
+    #### レスポンス
+    - ***floor***: 床面積の情報
+    - ***furnitures***: 家具のリスト (家具の位置情報、***家具の位置情報***を含む)
+    """
+    set_color_floor_plan_output_schema = set_optimized_color_each_furniture(floor_plan_output_schema, input_text)
+    return set_color_floor_plan_output_schema
+
 
 # 家具のリストを取得
 @router.get("/floor/furnitures")

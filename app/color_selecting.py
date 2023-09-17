@@ -7,7 +7,7 @@ from langchain.schema import (
 from dotenv import load_dotenv
 import os
 import openai
-from app.schemas import Floor, FurniturePlace
+from app.schemas import Floor, FurniturePlace, FloorPlanOutputSchema
 import re
 
 
@@ -79,6 +79,23 @@ def set_optimized_color_each_furniture(furnitureplace_list: list[FurniturePlace]
         new_furnitureplace_list.append(accent_color_furniture)    
     return new_furnitureplace_list
 
+def set_optimized_color_each_furniture(floor_plan_output_schema: FloorPlanOutputSchema, input_text: str):
+    """
+    Parameters
+    ---------
+    floor_plan_output_schema: FloorPlanOutputSchema
+        家具情報、配置情報、部屋の大きさの情報など
+    input_text: str
+        ユーザーの要望のテキスト
+
+    Returns
+    ------
+    set_color_floor_plan_output_schema: FloorPlanOutputSchema
+        色情報を追加したFloorPlanOutputSchema
+    """
+    set_color_floor_plan_output_schema = FloorPlanOutputSchema()
+    
+    return set_color_floor_plan_output_schema
 
 
 def distribute_furnitures(furnitureplace_list:list[FurniturePlace], room_area:float, ratios:list[float]=[7, 2.5, 0.5]):
