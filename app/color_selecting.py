@@ -9,6 +9,7 @@ import os
 import openai
 from app.schemas import Floor, FurniturePlace, FloorPlanOutputSchema
 import re
+from app.furniture_color_data import furniture_color_data, furniture_materials_data
 
 
 # .env ファイルをロード
@@ -33,6 +34,7 @@ def get_similar_color(hex_color, hue_shift=0.1):
 def get_complementary_color(hex_color):
     return get_similar_color(hex_color, 0.5)
 
+
 def color_distance(color1, color2):
     """Calculate distance between two colors in HSV space."""
     h1, s1, v1 = colorsys.rgb_to_hsv(*color1)
@@ -45,7 +47,7 @@ def color_distance(color1, color2):
 def closest_color(ref_color, colors):
     """Find the closest color from a list."""
     ref_color_rgb = hex_to_rgb(ref_color)
-    min_colors = None
+    min_color = None
     min_distance = float('inf')
     
     for color in colors:
@@ -53,10 +55,10 @@ def closest_color(ref_color, colors):
         distance = color_distance(ref_color_rgb, color_rgb)
         if distance < min_distance:
             min_distance = distance
-            min_colors = color
+            min_color = color
             
-    return min_colors
-
+    return min_color
+'''
 def set_optimized_color_each_furniture(furnitureplace_list: list[FurniturePlace], floor: Floor):
     """各家具に最適な色を与える
     """
@@ -78,7 +80,7 @@ def set_optimized_color_each_furniture(furnitureplace_list: list[FurniturePlace]
         accent_color_furniture.color_map_path = f'/materials/texture/desk/{accent_color_code[1:]}.jpg'
         new_furnitureplace_list.append(accent_color_furniture)    
     return new_furnitureplace_list
-
+'''
 def set_optimized_color_each_furniture(floor_plan_output_schema: FloorPlanOutputSchema, input_text: str):
     """
     Parameters
@@ -93,9 +95,61 @@ def set_optimized_color_each_furniture(floor_plan_output_schema: FloorPlanOutput
     set_color_floor_plan_output_schema: FloorPlanOutputSchema
         色情報を追加したFloorPlanOutputSchema
     """
-    set_color_floor_plan_output_schema = FloorPlanOutputSchema()
-    
+    recommended_colorcode = get_color_from_text_slab(text=input_text)
+    print(recommended_colorcode)
+    new_furnitureplace_object_list = list()
+    for furnitureplace_object in floor_plan_output_schema.furnitures:
+        list_of_colorcodes_furnitureplace_object_possesses = furniture_color_data[furnitureplace_object.name]
+        print(list_of_colorcodes_furnitureplace_object_possesses)
+        optimized_furniture_colorcode = closest_color(recommended_colorcode, list_of_colorcodes_furnitureplace_object_possesses)
+        print(optimized_furniture_colorcode)
+        materials_list = make_materials_list(furnitureplace_object.name, optimized_furniture_colorcode)
+        new_furnitureplace_object = FurniturePlace(
+            id=furnitureplace_object.id,
+            name=furnitureplace_object.name,
+            width=furnitureplace_object.width,
+            length=furnitureplace_object.length,
+            restriction=furnitureplace_object.restriction,
+            rand_rotation=furnitureplace_object.rand_rotation,
+            x=furnitureplace_object.x,
+            y=furnitureplace_object.y,
+            rotation=furnitureplace_object.rotation,
+            materials=materials_list
+        )
+        new_furnitureplace_object_list.append(new_furnitureplace_object)
+    print(new_furnitureplace_object_list)
+
+    set_color_floor_plan_output_schema = FloorPlanOutputSchema(
+        floor=floor_plan_output_schema.floor,
+        furnitures=new_furnitureplace_object_list,
+        scoring_of_room_layout_using_AI=floor_plan_output_schema.scoring_of_room_layout_using_AI
+    )
     return set_color_floor_plan_output_schema
+
+def make_materials_list(furniture_name, set_colorcode):
+    """
+    Parameters
+    ---------
+    furniture_name : str
+        家具の名前
+    set_colorcode: str
+        セットするカラーコードの文字列
+
+    Returns
+    ------
+    processed_materials_list: list
+        カラーこーどがセットされたmaterialsのリスト
+    """
+    materials_list = furniture_materials_data[furniture_name]
+    processed_materials_list = list()
+    for materials in materials_list:
+        if materials["colorMap"]=="":
+            materials['colorMap'] = f"/materials/texture/{furniture_name}/{set_colorcode[1:]}.jpg"
+        processed_materials_list.append(materials)
+    print(processed_materials_list)
+
+    return processed_materials_list
+
 
 
 def distribute_furnitures(furnitureplace_list:list[FurniturePlace], room_area:float, ratios:list[float]=[7, 2.5, 0.5]):
@@ -185,12 +239,6 @@ def get_color_pairs_from_text(text='水色が中心のお部屋がいい'):
     ])
     output_text = chat.content
     print(f'''テキストアウトプット{output_text}''')
-
-    """
-    color_code_1 = output_text.split(":")[1]
-    color_code_similar_color_code_1 = get_similar_color(color_code_1, hue_shift=0.1)
-    color_code_complementary_color_code_1 = get_complementary_color(color_code_1)
-    """
     color_codes = re.findall(r"#(?:[0-9a-fA-F]{3}){1,2}", output_text)
     print(color_codes)
 
@@ -201,7 +249,65 @@ def get_color_pairs_from_text(text='水色が中心のお部屋がいい'):
     return base_color, assorted_color, accent_color
 
     
+def get_color_from_text(text):
+    """テキストから色の組み合わせ3色を取得
+    Parameters
+    ---------
+    text : str
+        テキスト
+    
+    Returns
+    ------
+    recommneded_colorcode : str
+        AIがおすすめしてくれた色
+    """
+    prompt = f'''
+    あなたは部屋のコーディネーターです。
+    ##顧客の要望に沿うように部屋のメインカラーを3色下記の##選択肢の色の中から選び##制限に従って出力しなさい
 
+    ##出力フォーマット
+    カラーコード１：〇〇
+
+    ##制限
+    余計な文章は出力しない
+
+    ##顧客の要望
+    {text}
+
+    ##選択肢の色
+    #CC01CC
+    #6600CD
+    #3401CC
+    #0166FF
+    #00CCCB
+    #01CC34
+    #97CA00 
+    #FFFF01
+    #FF6600
+    #CC0001
+    '''
+    chat_model = ChatOpenAI(temperature=0 ,model_name="gpt-3.5-turbo")
+    chat = chat_model([
+        SystemMessage(content="日本語で回答して"),
+        HumanMessage(content=prompt),
+    ])
+
+    output_text = chat.content
+    print(output_text)
+    colorcodes = re.findall(r"#(?:[0-9a-fA-F]{3}){1,2}", output_text)
+
+    recommended_colorcode = colorcodes[0]
+
+    print(recommended_colorcode)
+    
+    return recommended_colorcode
+
+def get_color_from_text_slab(text):
+    """ダミーの関数
+    """
+    recommended_colorcode = '#FF6600'
+    
+    return recommended_colorcode
 
 if __name__ == '__main__':
     # 使用例

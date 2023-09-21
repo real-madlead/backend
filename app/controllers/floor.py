@@ -58,13 +58,14 @@ def generate_floor_plan(
             rotation=rotation,
             restriction = "",
             rand_rotation = [0],
-            color_map_path = ''
+            materials=[]
         )
         furniture_position_list.append(furniture_postion)
 
-    #new_furniture_position_list = set_optimized_color_each_furniture(furniture_position_list, floor_info.floor)
+    floor_plan_output_schema_before_set_color =  FloorPlanOutputSchema(floor=floor_info.floor, furnitures=furniture_position_list, scoring_of_room_layout_using_AI=best_arranged_score)
+    floor_plan_output_schema = set_optimized_color_each_furniture(floor_plan_output_schema=floor_plan_output_schema_before_set_color, input_text="暖かい雰囲気の部屋がいい")
     
-    return FloorPlanOutputSchema(floor=floor_info.floor, furnitures=furniture_position_list, scoring_of_room_layout_using_AI=best_arranged_score)
+    return floor_plan_output_schema 
 
 # 家具のリストを取得
 @router.post("/floor/set_color")
