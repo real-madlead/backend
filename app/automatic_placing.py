@@ -671,8 +671,9 @@ def recommend_furniture_using_AI(
             additinal_furnitre_placement_list = copy_current_room.place_furnitures_with_restriction(furniture_objects_list=[candidate_furniture])
             candidate_furnitureplace_list.append(additinal_furnitre_placement_list)
 
-            current_floor_plan_output_schema.furnitures += additinal_furnitre_placement_list
-            candidate_room_furnitureplace_list.append(current_floor_plan_output_schema.furnitures)
+            copy_current_floor_plan_output_schema = copy.deepcopy(current_floor_plan_output_schema)
+            copy_current_floor_plan_output_schema.furnitures += additinal_furnitre_placement_list
+            candidate_room_furnitureplace_list.append(copy_current_floor_plan_output_schema.furnitures)
             
         test_df = convert_furniture_list_to_dataframe(rooms_furniture_placement_list=candidate_room_furnitureplace_list, floor_object=current_floor_plan_output_schema.floor)
         
@@ -683,3 +684,59 @@ def recommend_furniture_using_AI(
             recommend_furnitureplace = candidate_furnitureplace_list[best_index]
             return recommend_furnitureplace[0], best_score
         
+
+def recommend_furnitureplace_each_furniture_using_AI(
+        candidate_furnitures_for_additional_placement:list[Furniture],
+        current_floor_plan_output_schema:FloorPlanOutputSchema,
+    ):
+    """AIにより渡された部屋に新たな家具を配置するようにおすすめする
+    Parameters
+    ---------
+    candidate_furnitures_for_additional_placement : list[Furniture]
+        追加で配置する家具の候補
+    current_floor_plan_output_schena : FloorPlanOutputSchema
+        現在の家具配置
+    current_score : flaot
+        現在の最高スコア
+    
+    Returns
+    ------
+    recommend_furnitureplaces_list_each_candidate_furniture : list[FurniturePlace]
+        おすすめする家具それぞれの最適な家具配置情報が格納されたリスト
+    best_scores_list : list[float]
+        おすすめの家具を配置した場合の部屋のスコア 
+    """
+    edges = [
+        [0, 0],
+        [0, current_floor_plan_output_schema.floor.length],
+        [current_floor_plan_output_schema.floor.width, current_floor_plan_output_schema.floor.length],
+        [current_floor_plan_output_schema.floor.width, 0]
+    ]
+    room = Room(edges=edges)
+    room.plot_room()
+    furnitures_list = current_floor_plan_output_schema.furnitures
+    _ = room.plot_furniture(furniture_places_list=furnitures_list)
+    recommend_furnitureplaces_list_each_candidate_furniture = list()
+    for candidate_furniture in candidate_furnitures_for_additional_placement:
+        while True:
+            room_info_list = list()
+            candidate_furnitureplace_list = list()
+            for i in range(10):
+                copy_current_room = copy.deepcopy(room)
+                additional_furnitureplace = copy_current_room.place_furnitures_with_restriction(furniture_objects_list=[candidate_furniture])
+                candidate_furnitureplace_list.append(additional_furnitureplace[0])
+                copy_current_floor_plan_output_schema = copy.deepcopy(current_floor_plan_output_schema)
+                copy_current_floor_plan_output_schema.furnitures += additional_furnitureplace
+                room_info_list.append(copy_current_floor_plan_output_schema.furnitures)
+            test_df = convert_furniture_list_to_dataframe(rooms_furniture_placement_list=room_info_list, floor_object=current_floor_plan_output_schema.floor)
+            #　AIによる採点
+            test_df = test_df.drop(['room_num', 'target'], axis=1)
+            best_index, best_score = get_high_score_indices(model_path='./AI_model/torch_model.pth', test_df=test_df)
+            if current_floor_plan_output_schema.scoring_of_room_layout_using_AI <= best_score:
+                recommend_furnitureplace = candidate_furnitureplace_list[best_index]
+                recommend_furnitureplaces_list_each_candidate_furniture.append(recommend_furnitureplace)
+                break
+    return recommend_furnitureplaces_list_each_candidate_furniture
+
+            
+    
