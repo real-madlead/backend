@@ -104,7 +104,7 @@ def get_furnitures() -> list[Furniture]:
 def recommend_furniture(
     room_info: FloorPlanOutputSchema,
     candidate_furnituresinput: list[FurnitureInput],
-) -> FurniturePlace:
+) -> list[FurniturePlace]:
     """
     ### AI提案機能用のAPI
     #### リクエスト
