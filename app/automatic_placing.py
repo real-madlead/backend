@@ -672,8 +672,9 @@ def recommend_furniture_using_AI(
             additinal_furnitre_placement_list = copy_current_room.place_furnitures_with_restriction(furniture_objects_list=[candidate_furniture])
             candidate_furnitureplace_list.append(additinal_furnitre_placement_list)
 
-            current_floor_plan_output_schema.furnitures += additinal_furnitre_placement_list
-            candidate_room_furnitureplace_list.append(current_floor_plan_output_schema.furnitures)
+            copy_current_floor_plan_output_schema = copy.deepcopy(current_floor_plan_output_schema)
+            copy_current_floor_plan_output_schema.furnitures += additinal_furnitre_placement_list
+            candidate_room_furnitureplace_list.append(copy_current_floor_plan_output_schema.furnitures)
             
         test_df = convert_furniture_list_to_dataframe(rooms_furniture_placement_list=candidate_room_furnitureplace_list, floor_object=current_floor_plan_output_schema.floor)
         

@@ -132,8 +132,10 @@ def recommend_furniture(
     ### AI提案機能用のAPI
     #### リクエスト
     - ***room_info***: AI提案前の部屋情報（FloorPlanOutputSchema）
+
     - ***candidate_furnitures***: AIが選ぶ家具の候補（list[Furniture]）
     - ***chatgpt_recommend_color_code: chatGPTが選択した一つのカラーこーどの文字列 (str)
+
 
     #### レスポンス
     - ***recommend_furnitureplace***: 配置情報も含んだAI提案家具（FurniturePlace）
@@ -144,7 +146,9 @@ def recommend_furniture(
             candidate_furniture_list.append(furniture_list_all[furniture.id])
     
     output_furnitureplace_num = random.randint(1,len(candidate_furniture_list))
+
     recommend_furnitureplaces_list, recommend_furnitureplaces_score_list = recommend_many_furniture_using_AI(candidate_furniture_list, room_info, output_furnitureplace_num, chatgpt_recommend_color_code)
+
     
     return recommend_furnitureplaces_list
      
