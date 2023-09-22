@@ -113,10 +113,23 @@ def set_furniture_color(
     print(f"saasd{set_color_floor_plan_output_schema}")
     print(f'sadsaddasdsa{chatgpt_recommend_color_code}')
     floor_plan_output_schema_plus_text = FloorPlanOutputSchemaPlusText(
-        floor_plan_output_schema=set_color_floor_plan_output_schema,
+        floor=set_color_floor_plan_output_schema.floor,
+        furnitures=set_color_floor_plan_output_schema.furnitures,
+        score_of_room_layout_using_AI=set_color_floor_plan_output_schema.score_of_room_layout_using_AI
         colorcodetext=chatgpt_recommend_color_code
     )
     return floor_plan_output_schema_plus_text
+# 間取り生成の出力
+class FloorPlanOutputSchema(BaseModel):
+    floor: Floor
+    furnitures: list[FurniturePlace]
+    score_of_room_layout_using_AI: float = Field(example=0.5)
+
+class FloorPlanOutputSchemaPlusText(FloorPlanInputSchema):
+    colorcodetext: str = Field(example="#ad5c5b")
+
+
+
 
 # 家具のリストを取得
 @router.get("/floor/furnitures")
@@ -152,9 +165,13 @@ def recommend_furniture(
     
     output_furnitureplace_num = random.randint(1,len(candidate_furniture_list))
 
-    recommend_furnitureplaces_list, recommend_furnitureplaces_score_list = recommend_many_furniture_using_AI(candidate_furniture_list, room_info_plus_chatgpt_txt.floor_plan_output_schema, output_furnitureplace_num, room_info_plus_chatgpt_txt.colorcodetext)
+    input_floorplanoutputschema = FloorPlanInputSchema(
+        floor=room_info_plus_chatgpt_txt.floor,
+        furnitures=room_info_plus_chatgpt_txt.furnitures,
+        score_of_room_layout_using_AI=room_info_plus_chatgpt_txt.score_of_room_layout_using_AI   
+    )
+    recommend_furnitureplaces_list, recommend_furnitureplaces_score_list = recommend_many_furniture_using_AI(candidate_furniture_list, input_floorplanoutputschema, output_furnitureplace_num, room_info_plus_chatgpt_txt.colorcodetext)
 
-    
     return recommend_furnitureplaces_list
      
     

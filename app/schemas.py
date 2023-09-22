@@ -37,6 +37,11 @@ class FloorPlanOutputSchema(BaseModel):
     furnitures: list[FurniturePlace]
     score_of_room_layout_using_AI: float = Field(example=0.5)
 
+class FloorPlanOutputSchemaPlusText(FloorPlanInputSchema):
+    colorcodetext: str = Field(example="#ad5c5b")
+
+"""
 class FloorPlanOutputSchemaPlusText(BaseModel):
     floor_plan_output_schema: FloorPlanOutputSchema
     colorcodetext: str = Field(example="ad5c5b")
+"""
