@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Query
-from app.schemas import FloorPlanInputSchema, FloorPlanOutputSchema, FurniturePlace, Furniture, FurnitureInput
+from app.schemas import FloorPlanInputSchema, FloorPlanOutputSchema, FurniturePlace, Furniture, FurnitureInput, FloorPlanOutputSchemaPlusText
 from app.furniture_data import furniture_list_all
 from app.automatic_placing import generate_room, squeeze_room, get_position, recommend_many_furniture_using_AI
 from app.color_selecting import set_optimized_color_each_furniture
 import random
 from typing import Tuple
+from pydandic import String 
 
 router = APIRouter()
 
@@ -97,7 +98,7 @@ def set_furniture_color(
 @router.post("/floor/set_color")
 def set_furniture_color(
     floor_plan_output_schema: FloorPlanOutputSchema
-) -> Tuple[FloorPlanOutputSchema, str]:
+) -> FloorPlanOutputSchemaPlusText:
     """
     ### 間取り生成用のAPI
     #### リクエスト
@@ -107,10 +108,10 @@ def set_furniture_color(
     #### レスポンス
     - ***floor***: 床面積の情報
     - ***furnitures***: 家具のリスト (家具の位置情報、***家具の位置情報***を含む)
-    - ***str***: chatgptが出力した一つのカラーコードの文字列
+    - ***colorcodetext***: chatgptが出力した一つのカラーコードの文字列
     """
     set_color_floor_plan_output_schema, chatgpt_recommend_color_code = set_optimized_color_each_furniture(floor_plan_output_schema, '暖かい雰囲気の部屋にしたい')
-    return set_color_floor_plan_output_schema, chatgpt_recommend_color_code
+    return FloorPlanOutputSchemaPlusText(set_color_floor_plan_output_schema, chatgpt_recommend_color_code)
 
 # 家具のリストを取得
 @router.get("/floor/furnitures")
@@ -124,9 +125,8 @@ def get_furnitures() -> list[Furniture]:
 
 @router.post('/floor/recommendation')
 def recommend_furniture(
-    room_info: FloorPlanOutputSchema,
+    room_info_plus_chatgpt_txt: FloorPlanOutputSchemaPlusText,
     candidate_furnituresinput: list[FurnitureInput],
-    chatgpt_recommend_color_code : str
 ) -> list[FurniturePlace]:
     """
     ### AI提案機能用のAPI
@@ -134,7 +134,7 @@ def recommend_furniture(
     - ***room_info***: AI提案前の部屋情報（FloorPlanOutputSchema）
 
     - ***candidate_furnitures***: AIが選ぶ家具の候補（list[Furniture]）
-    - ***chatgpt_recommend_color_code: chatGPTが選択した一つのカラーこーどの文字列 (str)
+    - ***colorcodetext***: chatGPTが選択した一つのカラーこーどの文字列 (str)
 
 
     #### レスポンス
@@ -147,7 +147,7 @@ def recommend_furniture(
     
     output_furnitureplace_num = random.randint(1,len(candidate_furniture_list))
 
-    recommend_furnitureplaces_list, recommend_furnitureplaces_score_list = recommend_many_furniture_using_AI(candidate_furniture_list, room_info, output_furnitureplace_num, chatgpt_recommend_color_code)
+    recommend_furnitureplaces_list, recommend_furnitureplaces_score_list = recommend_many_furniture_using_AI(candidate_furniture_list, room_info_plus_chatgpt_txt.floor_plan_output_schema, output_furnitureplace_num, room_info_plus_chatgpt_txt.colorcodetext)
 
     
     return recommend_furnitureplaces_list

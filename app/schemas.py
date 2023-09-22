@@ -31,10 +31,12 @@ class FloorPlanInputSchema(BaseModel):
     floor: Floor
     furnitures: list[FurnitureInput]
 
-
-
 # 間取り生成の出力
 class FloorPlanOutputSchema(BaseModel):
     floor: Floor
     furnitures: list[FurniturePlace]
     score_of_room_layout_using_AI: float = Field(example=0.5)
+
+class FloorPlanOutputSchemaPlusText(BaseModel):
+    floor_plan_output_schema: FloorPlanOutputSchema
+    colorcodetext: str = Field(example="ad5c5b")
