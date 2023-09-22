@@ -188,7 +188,7 @@ class Room():
                         x = x,
                         y = y,
                         rotation = rotation,
-                        materials = []
+                        color_code = ""
                     )
                     error_flag = self.plot_furniture([furnitureplace_object])
                     if error_flag[0]!=0:

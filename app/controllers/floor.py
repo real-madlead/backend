@@ -57,9 +57,9 @@ def generate_floor_plan(
             x=x,
             y=y,
             rotation=rotation,
-            restriction = "",
-            rand_rotation = [0],
-            materials=[]
+            restriction="",
+            rand_rotation=[0],
+            color_code=""
         )
         furniture_position_list.append(furniture_postion)
 
@@ -67,7 +67,7 @@ def generate_floor_plan(
     floor_plan_output_schema = set_optimized_color_each_furniture(floor_plan_output_schema=floor_plan_output_schema_before_set_color, input_text="青色を基調とした部屋にしたい")
     
     return floor_plan_output_schema 
-
+'''
 # 家具のリストを取得
 @router.post("/floor/set_color")
 def set_furniture_color(
@@ -89,7 +89,25 @@ def set_furniture_color(
     """
     set_color_floor_plan_output_schema = set_optimized_color_each_furniture(floor_plan_output_schema, input_text)
     return set_color_floor_plan_output_schema
+'''
 
+# 家具のリストを取得
+@router.post("/floor/set_color")
+def set_furniture_color(
+    floor_plan_output_schema: FloorPlanOutputSchema
+) -> FloorPlanOutputSchema:
+    """
+    ### 間取り生成用のAPI
+    #### リクエスト
+    - ***floor***: 床面積の情報
+    - ***furnitures***: 家具のリスト (家具の位置情報を含む)
+
+    #### レスポンス
+    - ***floor***: 床面積の情報
+    - ***furnitures***: 家具のリスト (家具の位置情報、***家具の位置情報***を含む)
+    """
+    set_color_floor_plan_output_schema = set_optimized_color_each_furniture(floor_plan_output_schema, '暖かい雰囲気の部屋にしたい')
+    return set_color_floor_plan_output_schema
 
 # 家具のリストを取得
 @router.get("/floor/furnitures")
