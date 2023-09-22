@@ -134,8 +134,9 @@ def get_furnitures() -> list[Furniture]:
 
 @router.post('/floor/recommendation')
 def recommend_furniture(
-    room_info_plus_chatgpt_txt: FloorPlanOutputSchemaPlusText,
+    room_info: FloorPlanOutputSchema,
     candidate_furnituresinput: list[FurnitureInput],
+    color_code_text: str
 ) -> list[FurniturePlace]:
     """
     ### AI提案機能用のAPI
@@ -156,12 +157,7 @@ def recommend_furniture(
     
     output_furnitureplace_num = random.randint(1,len(candidate_furniture_list))
 
-    input_floorplanoutputschema = FloorPlanInputSchema(
-        floor=room_info_plus_chatgpt_txt.floor,
-        furnitures=room_info_plus_chatgpt_txt.furnitures,
-        score_of_room_layout_using_AI=room_info_plus_chatgpt_txt.score_of_room_layout_using_AI   
-    )
-    recommend_furnitureplaces_list, recommend_furnitureplaces_score_list = recommend_many_furniture_using_AI(candidate_furniture_list, input_floorplanoutputschema, output_furnitureplace_num, room_info_plus_chatgpt_txt.colorcodetext)
+    recommend_furnitureplaces_list, recommend_furnitureplaces_score_list = recommend_many_furniture_using_AI(candidate_furniture_list, room_info, output_furnitureplace_num, color_code_text)
 
     return recommend_furnitureplaces_list
      
