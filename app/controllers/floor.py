@@ -4,6 +4,8 @@ from app.furniture_data import furniture_list_all
 from app.automatic_placing import generate_room, squeeze_room, get_position, recommend_many_furniture_using_AI
 from app.color_selecting import set_optimized_color_each_furniture
 import random
+from typing import Tuple
+
 router = APIRouter()
 
 # 家具のリストを受け取り、床の上に配置した家具のリストを返す
@@ -95,7 +97,7 @@ def set_furniture_color(
 @router.post("/floor/set_color")
 def set_furniture_color(
     floor_plan_output_schema: FloorPlanOutputSchema
-) -> FloorPlanOutputSchema:
+) -> Tuple[FloorPlanOutputSchema, str]:
     """
     ### 間取り生成用のAPI
     #### リクエスト
@@ -105,6 +107,7 @@ def set_furniture_color(
     #### レスポンス
     - ***floor***: 床面積の情報
     - ***furnitures***: 家具のリスト (家具の位置情報、***家具の位置情報***を含む)
+    - ***str***: chatgptが出力した一つのカラーコードの文字列
     """
     set_color_floor_plan_output_schema, chatgpt_recommend_color_code = set_optimized_color_each_furniture(floor_plan_output_schema, '暖かい雰囲気の部屋にしたい')
     return set_color_floor_plan_output_schema, chatgpt_recommend_color_code
@@ -130,6 +133,7 @@ def recommend_furniture(
     #### リクエスト
     - ***room_info***: AI提案前の部屋情報（FloorPlanOutputSchema）
     - ***candidate_furnitures***: AIが選ぶ家具の候補（list[Furniture]）
+    - ***chatgpt_recommend_color_code: chatGPTが選択した一つのカラーこーどの文字列 (str)
 
     #### レスポンス
     - ***recommend_furnitureplace***: 配置情報も含んだAI提案家具（FurniturePlace）
