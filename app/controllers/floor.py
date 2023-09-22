@@ -153,6 +153,8 @@ def recommend_furniture(
     """
     candidate_furniture_list = []
     for furniture in candidate_furnituresinput:
+        if furniture.id==5:
+            continue
         for _ in range(furniture.quantity):
             candidate_furniture_list.append(furniture_list_all[furniture.id])
     
