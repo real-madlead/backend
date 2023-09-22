@@ -115,19 +115,10 @@ def set_furniture_color(
     floor_plan_output_schema_plus_text = FloorPlanOutputSchemaPlusText(
         floor=set_color_floor_plan_output_schema.floor,
         furnitures=set_color_floor_plan_output_schema.furnitures,
-        score_of_room_layout_using_AI=set_color_floor_plan_output_schema.score_of_room_layout_using_AI
+        score_of_room_layout_using_AI=set_color_floor_plan_output_schema.score_of_room_layout_using_AI,
         colorcodetext=chatgpt_recommend_color_code
     )
     return floor_plan_output_schema_plus_text
-# 間取り生成の出力
-class FloorPlanOutputSchema(BaseModel):
-    floor: Floor
-    furnitures: list[FurniturePlace]
-    score_of_room_layout_using_AI: float = Field(example=0.5)
-
-class FloorPlanOutputSchemaPlusText(FloorPlanInputSchema):
-    colorcodetext: str = Field(example="#ad5c5b")
-
 
 
 
