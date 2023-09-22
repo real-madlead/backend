@@ -181,27 +181,27 @@ furniture_materials_data = {
         'desk': [
             {
                 'materialName':'wire_228153184',
-                "colorMap": "/materials/texture/desk/e3e3e3.jpg",
-                "normalMap": "/materials/texture/NormalMap/normal.jpeg",
-                "roughnessMap": "/materials/texture/RoughnessMap/Roughness_2.jpg"
+                "colorMap": "",
+                "normalMap": "/materials/texture/NormalMap/wood texture.jpeg",
+                "roughnessMap": "/materials/texture/RoughnessMap/Roughness_5.jpg"
             },
             {
                 'materialName':'wire_196088225',
-                "colorMap": "/materials/texture/desk/9b998e.jpg",
+                "colorMap": "/materials/texture/desk/1f201a.jpg",
                 "normalMap": "/materials/texture/NormalMap/normal.jpeg",
-                "roughnessMap": "/materials/texture/RoughnessMap/Roughness_2.jpg"
+                "roughnessMap": "/materials/texture/RoughnessMap/Roughness_4.jpg"
             },
             {
                 'materialName':'wire_006135006',
-                "colorMap": "/materials/texture/desk/ccae72.jpg",
+                "colorMap": "/materials/texture/desk/1f201a.jpg",
                 "normalMap": "/materials/texture/NormalMap/normal.jpeg",
-                "roughnessMap": "/materials/texture/RoughnessMap/Roughness_2.jpg"
+                "roughnessMap": "/materials/texture/RoughnessMap/Roughness_4.jpg"
             },
             {
                 'materialName':'wire_229154215',
-                "colorMap": "/materials/texture/desk/54423e.jpg",
+                "colorMap": "/materials/texture/desk/1f201a.jpg",
                 "normalMap": "/materials/texture/NormalMap/normal.jpeg",
-                "roughnessMap": "/materials/texture/RoughnessMap/Roughness_2.jpg"
+                "roughnessMap": "/materials/texture/RoughnessMap/Roughness_4.jpg"
             }
         ],
         'shelf': [
