@@ -63,7 +63,7 @@ def generate_floor_plan(
         )
         furniture_position_list.append(furniture_postion)
 
-    floor_plan_output_schema_before_set_color =  FloorPlanOutputSchema(floor=floor_info.floor, furnitures=furniture_position_list, scoring_of_room_layout_using_AI=best_arranged_score)
+    floor_plan_output_schema_before_set_color =  FloorPlanOutputSchema(floor=floor_info.floor, furnitures=furniture_position_list, score_of_room_layout_using_AI=best_arranged_score)
     floor_plan_output_schema = set_optimized_color_each_furniture(floor_plan_output_schema=floor_plan_output_schema_before_set_color, input_text="青色を基調とした部屋にしたい")
     
     return floor_plan_output_schema 

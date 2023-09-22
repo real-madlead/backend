@@ -122,7 +122,7 @@ def set_optimized_color_each_furniture(floor_plan_output_schema: FloorPlanOutput
     set_color_floor_plan_output_schema = FloorPlanOutputSchema(
         floor=floor_plan_output_schema.floor,
         furnitures=new_furnitureplace_object_list,
-        scoring_of_room_layout_using_AI=floor_plan_output_schema.scoring_of_room_layout_using_AI
+        score_of_room_layout_using_AI=floor_plan_output_schema.score_of_room_layout_using_AI
     )
     return set_color_floor_plan_output_schema
 
