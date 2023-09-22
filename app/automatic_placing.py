@@ -13,7 +13,8 @@ from torch.autograd import Variable
 from app.schemas import Furniture, FloorPlanInputSchema, FloorPlanOutputSchema, FurnitureInput, FurniturePlace, Floor
 from app.furniture_data import furniture_list_all
 import copy
-
+from app.furniture_color_data import furniture_color_data, furniture_materials_data
+from app.color_selecting import closest_color
 
 
 class Room():
@@ -688,7 +689,8 @@ def recommend_furniture_using_AI(
 def recommend_many_furniture_using_AI(
         candidate_furnitures_for_additional_placement:list[Furniture],
         current_floor_plan_output_schema:FloorPlanOutputSchema,
-        num:int
+        num:int,
+        chatgpt_recommend_color_code:str
     ):
     """AIにより渡された部屋に新たな家具を配置するようにおすすめする
     Parameters
@@ -745,12 +747,27 @@ def recommend_many_furniture_using_AI(
     top_n_index_list = [x[1] for x in sorted_recommend_furnitureplaces_score_list[:num]]
     
     top_n_furnitureplaces_list = [recommend_furnitureplaces_list_each_candidate_furniture[index] for index in top_n_index_list]
+    print(f"len recommend furnitureplace list : {len(top_n_furnitureplaces_list)}")
 
-    return top_n_furnitureplaces_list, top_n_score_list
-
-   
-
-
-
-
-    
+    #選定された家具に色情報をつける
+    new_top_n_furnitureplaces_list = list()
+    for one_of_top_furnitureplace in top_n_furnitureplaces_list:
+        list_of_colorcodes_furnitureplace_object_possesses = furniture_color_data[one_of_top_furnitureplace.name]
+        optimized_furniture_colorcode = closest_color(chatgpt_recommend_color_code, list_of_colorcodes_furnitureplace_object_possesses)
+        optimized_furniture_colorcode = optimized_furniture_colorcode[1:]
+        new_top_n_furnitureplaces_list.append(
+            FurniturePlace(
+                id=one_of_top_furnitureplace.id,
+                name=one_of_top_furnitureplace.name,
+                width=one_of_top_furnitureplace.width,
+                length=one_of_top_furnitureplace.length,
+                restriction=one_of_top_furnitureplace.restriction,
+                rand_rotation=one_of_top_furnitureplace.rand_rotation,
+                x=one_of_top_furnitureplace.x,
+                y=one_of_top_furnitureplace.y,
+                rotation=one_of_top_furnitureplace.rotation,
+                color_code = optimized_furniture_colorcode
+            )
+        )
+        
+    return new_top_n_furnitureplaces_list, top_n_score_list
