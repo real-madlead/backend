@@ -5,7 +5,6 @@ from app.automatic_placing import generate_room, squeeze_room, get_position, rec
 from app.color_selecting import set_optimized_color_each_furniture
 import random
 from typing import Tuple
-from pydandic import String 
 
 router = APIRouter()
 
@@ -111,7 +110,13 @@ def set_furniture_color(
     - ***colorcodetext***: chatgptが出力した一つのカラーコードの文字列
     """
     set_color_floor_plan_output_schema, chatgpt_recommend_color_code = set_optimized_color_each_furniture(floor_plan_output_schema, '暖かい雰囲気の部屋にしたい')
-    return FloorPlanOutputSchemaPlusText(set_color_floor_plan_output_schema, chatgpt_recommend_color_code)
+    print(f"saasd{set_color_floor_plan_output_schema}")
+    print(f'sadsaddasdsa{chatgpt_recommend_color_code}')
+    floor_plan_output_schema_plus_text = FloorPlanOutputSchemaPlusText(
+        floor_plan_output_schema=set_color_floor_plan_output_schema,
+        colorcodetext=chatgpt_recommend_color_code
+    )
+    return floor_plan_output_schema_plus_text
 
 # 家具のリストを取得
 @router.get("/floor/furnitures")
