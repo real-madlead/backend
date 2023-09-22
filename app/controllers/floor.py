@@ -112,11 +112,12 @@ def set_furniture_color(
     set_color_floor_plan_output_schema, chatgpt_recommend_color_code = set_optimized_color_each_furniture(floor_plan_output_schema, '暖かい雰囲気の部屋にしたい')
     print(f"saasd{set_color_floor_plan_output_schema}")
     print(f'sadsaddasdsa{chatgpt_recommend_color_code}')
+    print(chatgpt_recommend_color_code[1:])
     floor_plan_output_schema_plus_text = FloorPlanOutputSchemaPlusText(
         floor=set_color_floor_plan_output_schema.floor,
         furnitures=set_color_floor_plan_output_schema.furnitures,
         score_of_room_layout_using_AI=set_color_floor_plan_output_schema.score_of_room_layout_using_AI,
-        colorcodetext=chatgpt_recommend_color_code
+        colorcodetext=chatgpt_recommend_color_code[1:]
     )
     return floor_plan_output_schema_plus_text
 
@@ -156,8 +157,9 @@ def recommend_furniture(
             candidate_furniture_list.append(furniture_list_all[furniture.id])
     
     output_furnitureplace_num = random.randint(1,len(candidate_furniture_list))
-
-    recommend_furnitureplaces_list, recommend_furnitureplaces_score_list = recommend_many_furniture_using_AI(candidate_furniture_list, room_info, output_furnitureplace_num, color_code_text)
+    colorcodetext = '#'+color_code_text
+    print(colorcodetext)
+    recommend_furnitureplaces_list, recommend_furnitureplaces_score_list = recommend_many_furniture_using_AI(candidate_furniture_list, room_info, output_furnitureplace_num, colorcodetext)
 
     return recommend_furnitureplaces_list
      
