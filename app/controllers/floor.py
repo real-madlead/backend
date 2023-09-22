@@ -3,6 +3,7 @@ from app.schemas import FloorPlanInputSchema, FloorPlanOutputSchema, FurniturePl
 from app.furniture_data import furniture_list_all
 from app.automatic_placing import generate_room, squeeze_room, get_position, recommend_furniture_using_AI, recommend_many_furniture_using_AI
 from app.color_selecting import set_optimized_color_each_furniture
+import random
 router = APIRouter()
 
 # 家具のリストを受け取り、床の上に配置した家具のリストを返す
@@ -103,7 +104,6 @@ def get_furnitures() -> list[Furniture]:
 def recommend_furniture(
     room_info: FloorPlanOutputSchema,
     candidate_furnituresinput: list[FurnitureInput],
-    output_furnitureplace_num: int
 ) -> FurniturePlace:
     """
     ### AI提案機能用のAPI
@@ -118,6 +118,8 @@ def recommend_furniture(
     for furniture in candidate_furnituresinput:
         for _ in range(furniture.quantity):
             candidate_furniture_list.append(furniture_list_all[furniture.id])
+    
+    output_furnitureplace_num = random.randint(1,len(candidate_furniture_list))
     recommend_furnitureplaces_list, recommend_furnitureplaces_score_list = recommend_many_furniture_using_AI(candidate_furniture_list, room_info, output_furnitureplace_num)
     
     return recommend_furnitureplaces_list
