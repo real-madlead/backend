@@ -15,32 +15,7 @@ class FurniturePlace(Furniture):
     x: float = Field(example=2)
     y: float = Field(example=2)
     rotation: float = Field(example=0)
-    materials: list = Field(example=[
-        {
-            'materialName':'wall',
-            'colorMap':"/materials/texture/bed/wall_wood.jpeg",
-            'normalMap':"/materials/texture/NormalMap/wood texture.jpeg",
-            'roughnessMap':"/materials/texture/RoughnessMap/Roughness_3.jpg"
-        },
-        {
-            'materialName':'sheets',
-            "colorMap": "/materials/texture/bed/2c523c.jpg",
-            "normalMap": "/materials/texture/NormalMap/fabric wrinkles.jpeg",
-            "roughnessMap": "/materials/texture/RoughnessMap/Roughness_4.jpg"
-        },
-        {
-            'materialName':'pillow',
-            "colorMap": "/materials/texture/bed/2c523c.jpg",
-            "normalMap": "/materials/texture/NormalMap/normal.jpeg",
-            "roughnessMap": "/materials/texture/RoughnessMap/Roughness_4.jpg"
-        },
-        {
-            'materialName':'futon',
-            "colorMap": "/materials/texture/bed/2c523c.jpg",
-            "normalMap": "/materials/texture/NormalMap/normal.jpeg",
-            "roughnessMap": "/materials/texture/RoughnessMap/Roughness_4.jpg"
-        },
-    ]) 
+    color_code: str = Field(example="#FF6000")
 
 # 床
 class Floor(BaseModel):
@@ -62,4 +37,4 @@ class FloorPlanInputSchema(BaseModel):
 class FloorPlanOutputSchema(BaseModel):
     floor: Floor
     furnitures: list[FurniturePlace]
-    scoring_of_room_layout_using_AI: float = Field(example=0.5)
+    score_of_room_layout_using_AI: float = Field(example=0.5)

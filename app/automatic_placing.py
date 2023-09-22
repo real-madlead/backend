@@ -188,7 +188,7 @@ class Room():
                         x = x,
                         y = y,
                         rotation = rotation,
-                        materials = []
+                        color_code = ""
                     )
                     error_flag = self.plot_furniture([furnitureplace_object])
                     if error_flag[0]!=0:
@@ -679,7 +679,7 @@ def recommend_furniture_using_AI(
         #　AIによる採点
         test_df = test_df.drop(['room_num', 'target'], axis=1)
         best_index, best_score = get_high_score_indices(model_path='./AI_model/torch_model.pth', test_df=test_df)
-        if current_floor_plan_output_schema.scoring_of_room_layout_using_AI <= best_score:
+        if current_floor_plan_output_schema.score_of_room_layout_using_AI <= best_score:
             recommend_furnitureplace = candidate_furnitureplace_list[best_index]
             return recommend_furnitureplace[0], best_score
         
