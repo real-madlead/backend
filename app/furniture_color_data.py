@@ -13,7 +13,10 @@ furniture_color_data = {
     ],
     'desk': [
         '#54423e',
-        '#9b998e'
+        '#e3e3e3',
+        '#9b998e',
+        '#ccae72',
+        '#cba168'
     ],
     'chair': [
         '#343c3d',
