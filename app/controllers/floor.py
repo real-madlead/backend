@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Query
-from app.schemas import FloorPlanInputSchema, FloorPlanOutputSchema, FurniturePlace, Furniture
+from app.schemas import FloorPlanInputSchema, FloorPlanOutputSchema, FurniturePlace, Furniture, FurnitureInput
 from app.furniture_data import furniture_list_all
-from app.automatic_placing import generate_room, squeeze_room, get_position, recommend_furniture_using_AI
+from app.automatic_placing import generate_room, squeeze_room, get_position, recommend_many_furniture_using_AI
 from app.color_selecting import set_optimized_color_each_furniture
+import random
 router = APIRouter()
 
 # 家具のリストを受け取り、床の上に配置した家具のリストを返す
@@ -63,9 +64,9 @@ def generate_floor_plan(
         furniture_position_list.append(furniture_postion)
 
     floor_plan_output_schema_before_set_color =  FloorPlanOutputSchema(floor=floor_info.floor, furnitures=furniture_position_list, score_of_room_layout_using_AI=best_arranged_score)
-    floor_plan_output_schema = set_optimized_color_each_furniture(floor_plan_output_schema=floor_plan_output_schema_before_set_color, input_text="青色を基調とした部屋にしたい")
+    #floor_plan_output_schema = set_optimized_color_each_furniture(floor_plan_output_schema=floor_plan_output_schema_before_set_color, input_text="青色を基調とした部屋にしたい")
     
-    return floor_plan_output_schema 
+    return floor_plan_output_schema_before_set_color 
 '''
 # 家具のリストを取得
 @router.post("/floor/set_color")
@@ -105,8 +106,8 @@ def set_furniture_color(
     - ***floor***: 床面積の情報
     - ***furnitures***: 家具のリスト (家具の位置情報、***家具の位置情報***を含む)
     """
-    set_color_floor_plan_output_schema = set_optimized_color_each_furniture(floor_plan_output_schema, '暖かい雰囲気の部屋にしたい')
-    return set_color_floor_plan_output_schema
+    set_color_floor_plan_output_schema, chatgpt_recommend_color_code = set_optimized_color_each_furniture(floor_plan_output_schema, '暖かい雰囲気の部屋にしたい')
+    return set_color_floor_plan_output_schema, chatgpt_recommend_color_code
 
 # 家具のリストを取得
 @router.get("/floor/furnitures")
@@ -121,8 +122,9 @@ def get_furnitures() -> list[Furniture]:
 @router.post('/floor/recommendation')
 def recommend_furniture(
     room_info: FloorPlanOutputSchema,
-    candidate_furnitures: list[Furniture]
-) -> FurniturePlace:
+    candidate_furnituresinput: list[FurnitureInput],
+    chatgpt_recommend_color_code : str
+) -> list[FurniturePlace]:
     """
     ### AI提案機能用のAPI
     #### リクエスト
@@ -132,7 +134,14 @@ def recommend_furniture(
     #### レスポンス
     - ***recommend_furnitureplace***: 配置情報も含んだAI提案家具（FurniturePlace）
     """
-    recommend_furnitureplace, score_for_placing_recommended_furniture = recommend_furniture_using_AI(candidate_furnitures, room_info)
-    return recommend_furnitureplace
+    candidate_furniture_list = []
+    for furniture in candidate_furnituresinput:
+        for _ in range(furniture.quantity):
+            candidate_furniture_list.append(furniture_list_all[furniture.id])
+    
+    output_furnitureplace_num = random.randint(1,len(candidate_furniture_list))
+    recommend_furnitureplaces_list, recommend_furnitureplaces_score_list = recommend_many_furniture_using_AI(candidate_furniture_list, room_info, output_furnitureplace_num, chatgpt_recommend_color_code)
+    
+    return recommend_furnitureplaces_list
      
     

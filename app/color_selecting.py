@@ -63,6 +63,7 @@ def set_optimized_color_each_furniture(floor_plan_output_schema: FloorPlanOutput
     set_color_floor_plan_output_schema: FloorPlanOutputSchema
         色情報を追加したFloorPlanOutputSchema
     """
+    input_text = "水色をベースとした部屋にしたい"
     recommended_colorcode = get_color_from_text_slab(text=input_text)
     print(recommended_colorcode)
     new_furnitureplace_object_list = list()
@@ -92,7 +93,7 @@ def set_optimized_color_each_furniture(floor_plan_output_schema: FloorPlanOutput
         furnitures=new_furnitureplace_object_list,
         score_of_room_layout_using_AI=floor_plan_output_schema.score_of_room_layout_using_AI
     )
-    return set_color_floor_plan_output_schema
+    return set_color_floor_plan_output_schema, recommended_colorcode
 
     
 def get_color_from_text(text):
@@ -121,17 +122,16 @@ def get_color_from_text(text):
     {text}
 
     ##選択肢の色
-    #ae5cae
-    #865cae
-    #705daf
-    #5d85c3
-    #5dadae
-    #5dad71
-    #9aad5c
-    #c1c25c
-    #c1845b
-    #ad5c5b
-
+    - #ae5cae
+    - #865cae
+    - #705daf
+    - #5d85c3
+    - #5dadae
+    - #5dad71
+    - #9aad5c
+    - #c1c25c
+    - #c1845b
+    - #ad5c5b
     '''
     chat_model = ChatOpenAI(temperature=0 ,model_name="gpt-3.5-turbo")
     chat = chat_model([
@@ -152,7 +152,7 @@ def get_color_from_text(text):
 def get_color_from_text_slab(text):
     """ダミーの関数
     """
-    recommended_colorcode = '#FF6600'
+    recommended_colorcode = '#5d85c3'
     
     return recommended_colorcode
 

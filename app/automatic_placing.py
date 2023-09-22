@@ -13,7 +13,8 @@ from torch.autograd import Variable
 from app.schemas import Furniture, FloorPlanInputSchema, FloorPlanOutputSchema, FurnitureInput, FurniturePlace, Floor
 from app.furniture_data import furniture_list_all
 import copy
-
+from app.furniture_color_data import furniture_color_data, furniture_materials_data
+from app.color_selecting import closest_color
 
 
 class Room():
@@ -683,3 +684,89 @@ def recommend_furniture_using_AI(
             recommend_furnitureplace = candidate_furnitureplace_list[best_index]
             return recommend_furnitureplace[0], best_score
         
+
+def recommend_many_furniture_using_AI(
+        candidate_furnitures_for_additional_placement:list[Furniture],
+        current_floor_plan_output_schema:FloorPlanOutputSchema,
+        num:int,
+        chatgpt_recommend_color_code:str
+    ):
+    """AIにより渡された部屋に新たな家具を配置するようにおすすめする
+    Parameters
+    ---------
+    candidate_furnitures_for_additional_placement : list[Furniture]
+        追加で配置する家具の候補
+    current_floor_plan_output_schena : FloorPlanOutputSchema
+        現在の家具配置
+    current_score : flaot
+        現在の最高スコア
+    
+    Returns
+    ------
+    recommend_furnitureplaces_list_each_candidate_furniture : list[FurniturePlace]
+        おすすめする家具それぞれの最適な家具配置情報が格納されたリスト
+    best_scores_list : list[float]
+        おすすめの家具を配置した場合の部屋のスコア 
+    """
+    edges = [
+        [0, 0],
+        [0, current_floor_plan_output_schema.floor.length],
+        [current_floor_plan_output_schema.floor.width, current_floor_plan_output_schema.floor.length],
+        [current_floor_plan_output_schema.floor.width, 0]
+    ]
+    room = Room(edges=edges)
+    room.plot_room()
+    furnitures_list = current_floor_plan_output_schema.furnitures
+    _ = room.plot_furniture(furniture_places_list=furnitures_list)
+    recommend_furnitureplaces_list_each_candidate_furniture = list()
+    recommend_furnitureplaces_score_list = list()
+    for candidate_furniture in candidate_furnitures_for_additional_placement:
+        while True:
+            room_info_list = list()
+            candidate_furnitureplace_list = list()
+            for i in range(10):
+                copy_current_room = copy.deepcopy(room)
+                additional_furnitureplace = copy_current_room.place_furnitures_with_restriction(furniture_objects_list=[candidate_furniture])
+                candidate_furnitureplace_list.append(additional_furnitureplace[0])
+                copy_current_floor_plan_output_schema = copy.deepcopy(current_floor_plan_output_schema)
+                copy_current_floor_plan_output_schema.furnitures += additional_furnitureplace
+                room_info_list.append(copy_current_floor_plan_output_schema.furnitures)
+            test_df = convert_furniture_list_to_dataframe(rooms_furniture_placement_list=room_info_list, floor_object=current_floor_plan_output_schema.floor)
+            #　AIによる採点
+            test_df = test_df.drop(['room_num', 'target'], axis=1)
+            best_index, best_score = get_high_score_indices(model_path='./AI_model/torch_model.pth', test_df=test_df)
+            if current_floor_plan_output_schema.score_of_room_layout_using_AI <= best_score:
+                recommend_furnitureplace = candidate_furnitureplace_list[best_index]
+                recommend_furnitureplaces_list_each_candidate_furniture.append(recommend_furnitureplace)
+                recommend_furnitureplaces_score_list.append(best_score)
+                break
+     # 値とそのインデックスを組にしてソート
+    sorted_recommend_furnitureplaces_score_list = sorted([(x, i) for i, x in enumerate(recommend_furnitureplaces_score_list)], reverse=True)
+    top_n_score_list = [x[0] for x in sorted_recommend_furnitureplaces_score_list[:num]]
+    top_n_index_list = [x[1] for x in sorted_recommend_furnitureplaces_score_list[:num]]
+    
+    top_n_furnitureplaces_list = [recommend_furnitureplaces_list_each_candidate_furniture[index] for index in top_n_index_list]
+    print(f"len recommend furnitureplace list : {len(top_n_furnitureplaces_list)}")
+
+    #選定された家具に色情報をつける
+    new_top_n_furnitureplaces_list = list()
+    for one_of_top_furnitureplace in top_n_furnitureplaces_list:
+        list_of_colorcodes_furnitureplace_object_possesses = furniture_color_data[one_of_top_furnitureplace.name]
+        optimized_furniture_colorcode = closest_color(chatgpt_recommend_color_code, list_of_colorcodes_furnitureplace_object_possesses)
+        optimized_furniture_colorcode = optimized_furniture_colorcode[1:]
+        new_top_n_furnitureplaces_list.append(
+            FurniturePlace(
+                id=one_of_top_furnitureplace.id,
+                name=one_of_top_furnitureplace.name,
+                width=one_of_top_furnitureplace.width,
+                length=one_of_top_furnitureplace.length,
+                restriction=one_of_top_furnitureplace.restriction,
+                rand_rotation=one_of_top_furnitureplace.rand_rotation,
+                x=one_of_top_furnitureplace.x,
+                y=one_of_top_furnitureplace.y,
+                rotation=one_of_top_furnitureplace.rotation,
+                color_code = optimized_furniture_colorcode
+            )
+        )
+        
+    return new_top_n_furnitureplaces_list, top_n_score_list
