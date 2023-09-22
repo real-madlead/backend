@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query
 from app.schemas import FloorPlanInputSchema, FloorPlanOutputSchema, FurniturePlace, Furniture, FurnitureInput
 from app.furniture_data import furniture_list_all
-from app.automatic_placing import generate_room, squeeze_room, get_position, recommend_furniture_using_AI
+from app.automatic_placing import generate_room, squeeze_room, get_position, recommend_furniture_using_AI, recommend_many_furniture_using_AI
 from app.color_selecting import set_optimized_color_each_furniture
 router = APIRouter()
 
@@ -102,7 +102,8 @@ def get_furnitures() -> list[Furniture]:
 @router.post('/floor/recommendation')
 def recommend_furniture(
     room_info: FloorPlanOutputSchema,
-    candidate_furnituresinput: list[FurnitureInput]
+    candidate_furnituresinput: list[FurnitureInput],
+    output_furnitureplace_num: int
 ) -> FurniturePlace:
     """
     ### AI提案機能用のAPI
@@ -117,7 +118,8 @@ def recommend_furniture(
     for furniture in candidate_furnituresinput:
         for _ in range(furniture.quantity):
             candidate_furniture_list.append(furniture_list_all[furniture.id])
-    recommend_furnitureplace, score_for_placing_recommended_furniture = recommend_furniture_using_AI(candidate_furniture_list, room_info)
-    return recommend_furnitureplace
+    recommend_furnitureplaces_list, recommend_furnitureplaces_score_list = recommend_many_furniture_using_AI(candidate_furniture_list, room_info, output_furnitureplace_num)
+    
+    return recommend_furnitureplaces_list
      
     
