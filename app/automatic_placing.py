@@ -685,9 +685,10 @@ def recommend_furniture_using_AI(
             return recommend_furnitureplace[0], best_score
         
 
-def recommend_furnitureplace_each_furniture_using_AI(
+def recommend_many_furniture_using_AI(
         candidate_furnitures_for_additional_placement:list[Furniture],
         current_floor_plan_output_schema:FloorPlanOutputSchema,
+        num:int
     ):
     """AIにより渡された部屋に新たな家具を配置するようにおすすめする
     Parameters
@@ -717,6 +718,7 @@ def recommend_furnitureplace_each_furniture_using_AI(
     furnitures_list = current_floor_plan_output_schema.furnitures
     _ = room.plot_furniture(furniture_places_list=furnitures_list)
     recommend_furnitureplaces_list_each_candidate_furniture = list()
+    recommend_furnitureplaces_score_list = list()
     for candidate_furniture in candidate_furnitures_for_additional_placement:
         while True:
             room_info_list = list()
@@ -735,8 +737,20 @@ def recommend_furnitureplace_each_furniture_using_AI(
             if current_floor_plan_output_schema.scoring_of_room_layout_using_AI <= best_score:
                 recommend_furnitureplace = candidate_furnitureplace_list[best_index]
                 recommend_furnitureplaces_list_each_candidate_furniture.append(recommend_furnitureplace)
+                recommend_furnitureplaces_score_list.append(best_score)
                 break
-    return recommend_furnitureplaces_list_each_candidate_furniture
+     # 値とそのインデックスを組にしてソート
+    sorted_recommend_furnitureplaces_score_list = sorted([(x, i) for i, x in enumerate(recommend_furnitureplaces_score_list)], reverse=True)
+    top_n_score_list = [x[0] for x in sorted_recommend_furnitureplaces_score_list[:num]]
+    top_n_index_list = [x[1] for x in sorted_recommend_furnitureplaces_score_list[:num]]
+    
+    top_n_furnitureplaces_list = [recommend_furnitureplaces_list_each_candidate_furniture[index] for index in top_n_index_list]
 
-            
+    return top_n_furnitureplaces_list, top_n_score_list
+
+   
+
+
+
+
     
