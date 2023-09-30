@@ -11,7 +11,7 @@ import torch
 from torch import nn
 from torch.autograd import Variable
 from app.schemas import Furniture, FloorPlanInputSchema, FloorPlanOutputSchema, FurnitureInput, FurniturePlace, Floor
-from app.furniture_data import furniture_list_all
+from app.repository.furniture_data import furniture_list_all
 import copy
 from app.furniture_color_data import furniture_color_data, furniture_materials_data
 from app.color_selecting import closest_color
@@ -475,7 +475,7 @@ def generate_room(floor_object:Floor, furniture_list:list[Furniture], generate_n
     rooms_furniture_placement_df : pd.DataFrame
         各家具配置パターンでの家具の情報が入ったdataframe
     """
-    #print(f'''FURNITURES : {furnitures}''')
+
     edges = [
         [0, 0],
         [0, floor_object.length],
@@ -565,16 +565,16 @@ class Net(nn.Module):
 
 def get_high_score_indices(model_path, test_df):
     # データフレームをテストデータに変換
-    X_test = torch.tensor(test_df.values, dtype=torch.float32)
+    x_test = torch.tensor(test_df.values, dtype=torch.float32)
 
     # 保存したモデルを読み込む
-    model = Net(X_test.shape[1])  # モデルのインスタンスを作成
+    model = Net(x_test.shape[1])  # モデルのインスタンスを作成
     model.load_state_dict(torch.load(model_path))  # 保存したモデルのパラメータを読み込む
     model.eval()  # モデルを評価モードに設定
 
     # X_testデータを使って予測を行う
     with torch.no_grad():
-        predictions = model(X_test)
+        predictions = model(x_test)
 
 
     # 予測結果をPyTorchのテンソルからnumpy配列に変換
@@ -603,9 +603,6 @@ def squeeze_room(df):
     index : int
         ベストな家具の配置パターンのindex値
     """
-    #for i in df.columns:
-    #    print(i)
-    print(f'''----------------->{df.shape[1]}''')
     model_path = './AI_model/torch_model.pth'
     df_test = df.drop(['room_num', 'target'], axis=1)
     index, score = get_high_score_indices(model_path, df_test)
