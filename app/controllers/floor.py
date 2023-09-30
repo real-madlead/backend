@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query
 from app.schemas import FloorPlanInputSchema, FloorPlanOutputSchema, FurniturePlace, Furniture, FurnitureInput, FloorPlanOutputSchemaPlusText
-from app.furniture_data import furniture_list_all
+from app.repository.furniture_data import furniture_list_all
 from app.automatic_placing import generate_room, squeeze_room, get_position, recommend_many_furniture_using_AI
 from app.color_selecting import set_optimized_color_each_furniture
 import random
@@ -164,5 +164,3 @@ def recommend_furniture(
     recommend_furnitureplaces_list, recommend_furnitureplaces_score_list = recommend_many_furniture_using_AI(candidate_furniture_list, room_info, output_furnitureplace_num, colorcodetext)
 
     return recommend_furnitureplaces_list
-     
-    

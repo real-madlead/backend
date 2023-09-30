@@ -5,3 +5,4 @@ app/controllers/__pycache__/
 .idea/
 .python-version
 *.log
+app/repository/__pycache__/
