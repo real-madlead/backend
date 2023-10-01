@@ -6,3 +6,5 @@ app/controllers/__pycache__/
 .python-version
 *.log
 app/repository/__pycache__/
+app/models/__pycache__/
+app/service/__pycache__/

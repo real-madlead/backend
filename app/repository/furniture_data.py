@@ -1,9 +1,9 @@
-from app.models import Furniture
+from app.models.furniture import Furniture
 
 def get_furniture_by_id(id: int) -> Furniture:
     return furniture_data[id]
 
-def get_furnitures_by_ids(ids: list(int)) -> list(Furniture):
+def get_furnitures_by_ids(ids: list[int]) -> list[Furniture]:
     furniture_list = []
     for i in ids:
         furniture_list.append(furniture_data[i])

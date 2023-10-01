@@ -11,17 +11,17 @@ import torch
 from torch import nn
 from torch.autograd import Variable
 from app.schemas import (
-    Furniture,
+    FurnitureSchema,
     FloorPlanInputSchema,
     FloorPlanOutputSchema,
     FurnitureInput,
     FurniturePlace,
     Floor,
 )
-from app.repository.furniture_data import furniture_list_all
+from app.repository.furniture_data import furniture_data
 import copy
 from app.furniture_color_data import furniture_color_data, furniture_materials_data
-from app.color_selecting import closest_color
+from app.service.color_selecting import closest_color
 
 
 class Room:
@@ -168,7 +168,7 @@ class Room:
         """
         # 新しいソートされたリストを作成
         sorted_furniture_objects_list = []
-        for item in furniture_list_all:
+        for item in furniture_data:
             count = furniture_objects_list.count(item)
             sorted_furniture_objects_list.extend([item] * count)
 
@@ -613,7 +613,7 @@ def get_furniture_distance(dict_list, name, selfdict):
 
 def generate_room(
     floor_object: Floor,
-    furniture_list: list[Furniture],
+    furniture_list: list[FurnitureSchema],
     generate_num: int,
     windows: list = None,
     doors: list = None,
@@ -678,7 +678,7 @@ def convert_furniture_list_to_dataframe(
     rooms_furniture_placement_df = pd.DataFrame()
     for index, furniture_placement_list in enumerate(rooms_furniture_placement_list):
         each_furniture_count_dict = dict()
-        for item in furniture_list_all:
+        for item in furniture_data:
             each_furniture_count_dict[item.name] = furniture_placement_list.count(item)
         furniture_placement_dict = {
             "room_num": f"room_{index}",
@@ -687,7 +687,7 @@ def convert_furniture_list_to_dataframe(
             "target": "uninspected",
         }
         dummy_dict_list = list()
-        for furniture in furniture_list_all:
+        for furniture in furniture_data:
             specific_furniture_placements_list = [
                 furniture_placement
                 for furniture_placement in furniture_placement_list
@@ -703,7 +703,7 @@ def convert_furniture_list_to_dataframe(
                 dummy_dict["length"] = specific_furniture_placements_list[i].length
                 dummy_dict_list.append(dummy_dict)
         only_name_list = [dic["name"] for dic in dummy_dict_list]
-        for furniture in furniture_list_all:
+        for furniture in furniture_data:
             for i in range(3):
                 if f"{furniture.name}_{i+1}" in only_name_list:
                     furniture_placement_dict[f"{furniture.name}_{i+1}_exist"] = 1
@@ -747,7 +747,7 @@ def convert_furniture_list_to_dataframe(
                         ),
                         None,
                     )
-                    for fur in furniture_list_all:
+                    for fur in furniture_data:
                         for i_2 in range(3):
                             furniture_placement_dict[
                                 f"{furniture.name}_{i+1}_d_{fur.name}_{i_2+1}"
@@ -770,7 +770,7 @@ def convert_furniture_list_to_dataframe(
                     furniture_placement_dict[f"{furniture.name}_{i+1}_x"] = 0
                     furniture_placement_dict[f"{furniture.name}_{i+1}_y"] = 0
                     furniture_placement_dict[f"{furniture.name}_{i+1}_rotation"] = 0
-                    for fur in furniture_list_all:
+                    for fur in furniture_data:
                         for i_2 in range(3):
                             furniture_placement_dict[
                                 f"{furniture.name}_{i+1}_d_{fur.name}_{i_2+1}"
@@ -864,7 +864,7 @@ def get_position(name: str, name_counter: dict, series):
 
 
 def recommend_furniture_using_AI(
-    candidate_furnitures_for_additional_placement: list[Furniture],
+    candidate_furnitures_for_additional_placement: list[FurnitureSchema],
     current_floor_plan_output_schema: FloorPlanOutputSchema,
 ):
     """AIにより渡された部屋に新たな家具を配置するようにおすすめする
@@ -935,7 +935,7 @@ def recommend_furniture_using_AI(
 
 
 def recommend_many_furniture_using_AI(
-    candidate_furnitures_for_additional_placement: list[Furniture],
+    candidate_furnitures_for_additional_placement: list[FurnitureSchema],
     current_floor_plan_output_schema: FloorPlanOutputSchema,
     num: int,
     chatgpt_recommend_color_code: str,
