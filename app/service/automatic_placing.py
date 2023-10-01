@@ -18,7 +18,7 @@ from app.schemas import (
     FurniturePlace,
     Floor,
 )
-from app.repository.furniture_data import furniture_data
+from app.repository.furniture_data import get_furniture_all
 import copy
 from app.repository.furniture_color_data import furniture_color_data, furniture_materials_data
 from app.service.color_selecting import closest_color
@@ -168,7 +168,9 @@ class Room:
         """
         # 新しいソートされたリストを作成
         sorted_furniture_objects_list = []
-        for item in furniture_data:
+        
+        all_furniture = get_furniture_all()
+        for item in all_furniture:
             count = furniture_objects_list.count(item)
             sorted_furniture_objects_list.extend([item] * count)
 
@@ -676,9 +678,10 @@ def convert_furniture_list_to_dataframe(
         AIのデータ用にフォーマットしたDataFrame
     """
     rooms_furniture_placement_df = pd.DataFrame()
+    all_furniture = get_furniture_all()
     for index, furniture_placement_list in enumerate(rooms_furniture_placement_list):
         each_furniture_count_dict = dict()
-        for item in furniture_data:
+        for item in all_furniture:
             each_furniture_count_dict[item.name] = furniture_placement_list.count(item)
         furniture_placement_dict = {
             "room_num": f"room_{index}",
@@ -687,7 +690,7 @@ def convert_furniture_list_to_dataframe(
             "target": "uninspected",
         }
         dummy_dict_list = list()
-        for furniture in furniture_data:
+        for furniture in all_furniture:
             specific_furniture_placements_list = [
                 furniture_placement
                 for furniture_placement in furniture_placement_list
@@ -703,7 +706,7 @@ def convert_furniture_list_to_dataframe(
                 dummy_dict["length"] = specific_furniture_placements_list[i].length
                 dummy_dict_list.append(dummy_dict)
         only_name_list = [dic["name"] for dic in dummy_dict_list]
-        for furniture in furniture_data:
+        for furniture in all_furniture:
             for i in range(3):
                 if f"{furniture.name}_{i+1}" in only_name_list:
                     furniture_placement_dict[f"{furniture.name}_{i+1}_exist"] = 1
@@ -747,7 +750,7 @@ def convert_furniture_list_to_dataframe(
                         ),
                         None,
                     )
-                    for fur in furniture_data:
+                    for fur in all_furniture:
                         for i_2 in range(3):
                             furniture_placement_dict[
                                 f"{furniture.name}_{i+1}_d_{fur.name}_{i_2+1}"
@@ -770,7 +773,7 @@ def convert_furniture_list_to_dataframe(
                     furniture_placement_dict[f"{furniture.name}_{i+1}_x"] = 0
                     furniture_placement_dict[f"{furniture.name}_{i+1}_y"] = 0
                     furniture_placement_dict[f"{furniture.name}_{i+1}_rotation"] = 0
-                    for fur in furniture_data:
+                    for fur in all_furniture:
                         for i_2 in range(3):
                             furniture_placement_dict[
                                 f"{furniture.name}_{i+1}_d_{fur.name}_{i_2+1}"

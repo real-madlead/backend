@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query
 from app.schemas import FloorPlanInputSchema, FloorPlanOutputSchema, FurniturePlace, FurnitureSchema, FurnitureInput, FloorPlanOutputSchemaPlusText
-from app.repository.furniture_data import furniture_data
+from app.repository.furniture_data import get_furniture_by_id, get_furniture_all
 from app.service.automatic_placing import generate_room, squeeze_room, get_position, recommend_many_furniture_using_AI
 from app.service.color_selecting import set_optimized_color_each_furniture
 import random
@@ -32,7 +32,7 @@ def generate_floor_plan(
     for furniture in floor_info.furnitures:
         for i in range(furniture.quantity):
             #print(f'''APPEND FURNITURE : {furniture_list_all[furniture.id]}''')
-            furniture_list.append(furniture_data[furniture.id])
+            furniture_list.append(get_furniture_by_id(furniture.id))
     # ランダムに家具の配置を作成
     #print(f'''INPUT : {furniture_list}''')
     generated_room = generate_room(floor_object=floor_info.floor, furniture_list=furniture_list, generate_num=10)
@@ -132,7 +132,8 @@ def get_furnitures() -> list[FurnitureSchema]:
     [id, name, width, length]をカラムに持つオブジェクトが複数個入った配列が返ってくる
     """
     res = []
-    for i in furniture_data:
+    all_furniture = get_furniture_all()
+    for i in all_furniture:
         res.append(FurnitureSchema(id=i.id, name=i.name, width=i.width, length=i.length, restriction=i.restriction, rand_rotation=i.rand_rotation))
     return res
 
@@ -159,7 +160,7 @@ def recommend_furniture(
         if furniture.id==5:
             continue
         for _ in range(furniture.quantity):
-            candidate_furniture_list.append(furniture_data[furniture.id])
+            candidate_furniture_list.append(get_furniture_by_id(furniture.id))
     
     output_furnitureplace_num = random.randint(1,len(candidate_furniture_list))
     colorcodetext = '#'+color_code_text

@@ -9,6 +9,9 @@ def get_furnitures_by_ids(ids: list[int]) -> list[Furniture]:
         furniture_list.append(furniture_data[i])
     return furniture_list
 
+def get_furniture_all() -> list[Furniture]:
+    return furniture_data
+
 furniture_data: list[Furniture] = [
     Furniture(id=0, name="bed", width=1.95, length=1.0, rand_rotation=[0, 90, 180, 270], restriction="alongwall"),
     Furniture(id=1, name="desk", width=1.2, length=0.6, rand_rotation=[0, 90, 180, 270], restriction="alongwall"),
