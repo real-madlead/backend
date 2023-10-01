@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
 # 家具
-class Furniture(BaseModel):
+class FurnitureSchema(BaseModel):
     id: int = Field(example=0)
     name: str = Field(example="bed")
     width: float = Field(example=1.95)
@@ -11,7 +11,7 @@ class Furniture(BaseModel):
     
 
 # 家具の位置　家具を継承
-class FurniturePlace(Furniture):
+class FurniturePlace(FurnitureSchema):
     x: float = Field(example=2)
     y: float = Field(example=2)
     rotation: float = Field(example=0)
