@@ -20,7 +20,7 @@ from app.schemas import (
 )
 from app.repository.furniture_data import furniture_data
 import copy
-from app.furniture_color_data import furniture_color_data, furniture_materials_data
+from app.repository.furniture_color_data import furniture_color_data, furniture_materials_data
 from app.service.color_selecting import closest_color
 
 

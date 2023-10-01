@@ -9,7 +9,7 @@ import os
 import openai
 from app.schemas import Floor, FurniturePlace, FloorPlanOutputSchema
 import re
-from app.furniture_color_data import furniture_color_data, furniture_materials_data
+from app.repository.furniture_color_data import furniture_color_data, furniture_materials_data
 
 
 # .env ファイルをロード
